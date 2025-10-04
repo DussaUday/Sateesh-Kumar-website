@@ -32,7 +32,7 @@ const Hero = () => {
       setHeroData({
         title: "Puttagunta Venkata Sateesh Kumar",
         subtitle: "Service Is My Passion",
-        image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+        image: "https://scontent.fhyd14-4.fna.fbcdn.net/v/t39.30808-6/308503258_457664199720909_8604279637100674190_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=d1afvFy1qIkQ7kNvwHjsxul&_nc_oc=Adl-z75kxq6jSYH0LlOybcgBWTAXHbTpzQG3fJxfkuCCygj4w8sw3hVGq-FLE-tQYX3nOPvJmq5XpY9VYS9apd-N&_nc_zt=23&_nc_ht=scontent.fhyd14-4.fna&_nc_gid=0bUTIjMOeiahuYdr7GqFSA&oh=00_AfZX1K-3vjOYWcFs2PVhE6is38KRFTukzagJ22zsEEOtnA&oe=68E410AD",
         stats: [
           { number: '20+', text: 'Years of Service', icon: 'Award' },
           { number: '100+', text: 'Community Camps', icon: 'Users' },
@@ -44,11 +44,11 @@ const Hero = () => {
 
   const fetchProfileImage = async () => {
     try {
-      const response = await axios.get('/api/gallery?category=profile&limit=1');
+      const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/gallery?category=profile&limit=1');
       if (response.data.length > 0) {
         setProfileImage(response.data[0].image);
       } else {
-        setProfileImage('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80');
+        setProfileImage('https://scontent.fhyd14-4.fna.fbcdn.net/v/t39.30808-6/308503258_457664199720909_8604279637100674190_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=d1afvFy1qIkQ7kNvwHjsxul&_nc_oc=Adl-z75kxq6jSYH0LlOybcgBWTAXHbTpzQG3fJxfkuCCygj4w8sw3hVGq-FLE-tQYX3nOPvJmq5XpY9VYS9apd-N&_nc_zt=23&_nc_ht=scontent.fhyd14-4.fna&_nc_gid=0bUTIjMOeiahuYdr7GqFSA&oh=00_AfZX1K-3vjOYWcFs2PVhE6is38KRFTukzagJ22zsEEOtnA&oe=68E410AD');
       }
     } catch (error) {
       console.error('Error fetching profile image:', error);
