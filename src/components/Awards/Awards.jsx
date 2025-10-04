@@ -22,7 +22,7 @@ const Awards = () => {
     const fetchAwards = async () => {
       try {
         setLoading(true)
-        const response = await axios.get('/api/awards')
+        const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/awards')
         console.log('Fetched awards:', response.data)
         setAwards(response.data)
         setError(null)

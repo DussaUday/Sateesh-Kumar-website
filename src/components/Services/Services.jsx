@@ -30,7 +30,7 @@ const Services = () => {
 
   const fetchServices = async () => {
     try {
-      const response = await axios.get('/api/services');
+      const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/services');
       // Sort services by date (newest first) immediately after fetching
       const sortedServices = response.data.sort((a, b) => {
         const dateA = new Date(a.createdAt || a.updatedAt || new Date());

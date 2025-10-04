@@ -60,11 +60,11 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       const [heroRes, servicesRes, awardsRes, galleryRes, aboutRes] = await Promise.all([
-        axios.get('/api/hero').catch(() => ({ data: {} })),
-        axios.get('/api/services').catch(() => ({ data: [] })),
-        axios.get('/api/awards').catch(() => ({ data: [] })),
-        axios.get('/api/gallery?limit=100').catch(() => ({ data: [] })),
-        axios.get('/api/about/sections').catch(() => ({ data: [] }))
+        axios.get('https://sateesh-kumar-portfolio.onrender.com/api/hero').catch(() => ({ data: {} })),
+        axios.get('https://sateesh-kumar-portfolio.onrender.com/api/services').catch(() => ({ data: [] })),
+        axios.get('https://sateesh-kumar-portfolio.onrender.com/api/awards').catch(() => ({ data: [] })),
+        axios.get('https://sateesh-kumar-portfolio.onrender.com/api/gallery?limit=100').catch(() => ({ data: [] })),
+        axios.get('https://sateesh-kumar-portfolio.onrender.com/api/about/sections').catch(() => ({ data: [] }))
       ]);
       
       setHeroData(heroRes.data || {});
@@ -141,7 +141,7 @@ const AdminDashboard = () => {
         ctaText: currentHero.ctaText || 'Explore Journey'
       };
       
-      const response = await axios.put('/api/hero', updatedHero);
+      const response = await axios.put('https://sateesh-kumar-portfolio.onrender.com/api/hero', updatedHero);
       setHeroData(response.data);
     } catch (error) {
       console.error('Error saving hero image:', error);
@@ -155,7 +155,7 @@ const AdminDashboard = () => {
       const newImage = { url: imageUrl, title: title || 'Service Image' };
       const updatedImages = [...(service?.images || []), newImage];
       
-      const response = await axios.put(`/api/services/${serviceId}`, { 
+      const response = await axios.put(`https://sateesh-kumar-portfolio.onrender.com/api/services/${serviceId}`, { 
         ...service, 
         images: updatedImages,
         mainImage: service?.mainImage || imageUrl
@@ -173,7 +173,7 @@ const AdminDashboard = () => {
       const newImage = { url: imageUrl, title: title || 'Award Image' };
       const updatedImages = [...(award?.images || []), newImage];
       
-      const response = await axios.put(`/api/awards/${awardId}`, { 
+      const response = await axios.put(`https://sateesh-kumar-portfolio.onrender.com/api/awards/${awardId}`, { 
         ...award, 
         images: updatedImages,
         mainImage: award?.mainImage || imageUrl
@@ -187,7 +187,7 @@ const AdminDashboard = () => {
 
   const saveAboutImage = async (sectionId, imageUrl) => {
     try {
-      const response = await axios.put(`/api/about/sections/${sectionId}`, { image: imageUrl });
+      const response = await axios.put(`https://sateesh-kumar-portfolio.onrender.com/api/about/sections/${sectionId}`, { image: imageUrl });
       return response.data;
     } catch (error) {
       console.error('Error saving about image:', error);
@@ -197,7 +197,7 @@ const AdminDashboard = () => {
 
   const saveGalleryItem = async (imageUrl, title, category = 'general') => {
     try {
-      const response = await axios.post('/api/gallery', {
+      const response = await axios.post('https://sateesh-kumar-portfolio.onrender.com/api/gallery', {
         title,
         image: imageUrl,
         category,
@@ -370,7 +370,7 @@ const HeroManagement = ({ data, onUpload, uploading, uploadProgress, onRefresh }
 
   const fetchProfileImage = async () => {
     try {
-      const response = await axios.get('/api/gallery?category=profile&limit=1');
+      const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/gallery?category=profile&limit=1');
       if (response.data.length > 0) {
         setProfileImage(response.data[0].image);
       } else {
@@ -409,7 +409,7 @@ const HeroManagement = ({ data, onUpload, uploading, uploadProgress, onRefresh }
 
   const updateHero = async (updates) => {
     try {
-      const response = await axios.put('/api/hero', { ...hero, ...updates });
+      const response = await axios.put('https://sateesh-kumar-portfolio.onrender.com/api/hero', { ...hero, ...updates });
       setHero(response.data);
       setTempHero(response.data);
       setIsEditing(false);
@@ -559,7 +559,7 @@ const HeroManagement = ({ data, onUpload, uploading, uploadProgress, onRefresh }
                     <button
                       onClick={async () => {
                         try {
-                          await axios.put('/api/hero', { ...hero, image: '' });
+                          await axios.put('https://sateesh-kumar-portfolio.onrender.com/api/hero', { ...hero, image: '' });
                           setHero(prev => ({ ...prev, image: '' }));
                           setTempHero(prev => ({ ...prev, image: '' }));
                           alert('Background image removed successfully!');
@@ -766,7 +766,7 @@ const ServicesManagement = ({ data, onUpload, uploading, uploadProgress, onRefre
         mainImage: ''
       };
       
-      const response = await axios.post('/api/services', serviceToCreate);
+      const response = await axios.post('https://sateesh-kumar-portfolio.onrender.com/api/services', serviceToCreate);
       setServices(prev => [...prev, response.data]);
       setSelectedService(response.data);
       setNewService({
@@ -787,7 +787,7 @@ const ServicesManagement = ({ data, onUpload, uploading, uploadProgress, onRefre
 
   const updateService = async (serviceId, updates) => {
     try {
-      const response = await axios.put(`/api/services/${serviceId}`, updates);
+      const response = await axios.put(`https://sateesh-kumar-portfolio.onrender.com/api/services/${serviceId}`, updates);
       setServices(prev => prev.map(s => s._id === serviceId ? response.data : s));
       setSelectedService(response.data);
       alert('Service updated successfully!');
@@ -800,7 +800,7 @@ const ServicesManagement = ({ data, onUpload, uploading, uploadProgress, onRefre
   const deleteService = async (serviceId) => {
     if (window.confirm('Are you sure you want to delete this service?')) {
       try {
-        await axios.delete(`/api/services/${serviceId}`);
+        await axios.delete(`https://sateesh-kumar-portfolio.onrender.com/api/services/${serviceId}`);
         setServices(prev => prev.filter(s => s._id !== serviceId));
         if (selectedService && selectedService._id === serviceId) {
           setSelectedService(services.length > 1 ? services.find(s => s._id !== serviceId) : null);
@@ -824,7 +824,7 @@ const ServicesManagement = ({ data, onUpload, uploading, uploadProgress, onRefre
 
   const setMainImage = async (serviceId, imageUrl) => {
     try {
-      await axios.put(`/api/services/${serviceId}`, { mainImage: imageUrl });
+      await axios.put(`https://sateesh-kumar-portfolio.onrender.com/api/services/${serviceId}`, { mainImage: imageUrl });
       onRefresh();
       alert('Main image set successfully!');
     } catch (error) {
@@ -839,7 +839,7 @@ const ServicesManagement = ({ data, onUpload, uploading, uploadProgress, onRefre
         const service = services.find(s => s._id === serviceId);
         const updatedImages = (service.images || []).filter(img => img.url !== imageUrl);
         
-        await axios.put(`/api/services/${serviceId}`, {
+        await axios.put(`https://sateesh-kumar-portfolio.onrender.com/api/services/${serviceId}`, {
           ...service,
           images: updatedImages,
           mainImage: service.mainImage === imageUrl ? '' : service.mainImage
@@ -1162,7 +1162,7 @@ const AwardsManagement = ({ data, onUpload, uploading, uploadProgress, onRefresh
         mainImage: ''
       };
       
-      const response = await axios.post('/api/awards', awardToCreate);
+      const response = await axios.post('https://sateesh-kumar-portfolio.onrender.com/api/awards', awardToCreate);
       setAwards(prev => [...prev, response.data]);
       setSelectedAward(response.data);
       setNewAward({
@@ -1181,7 +1181,7 @@ const AwardsManagement = ({ data, onUpload, uploading, uploadProgress, onRefresh
 
   const updateAward = async (awardId, updates) => {
     try {
-      const response = await axios.put(`/api/awards/${awardId}`, updates);
+      const response = await axios.put(`https://sateesh-kumar-portfolio.onrender.com/api/awards/${awardId}`, updates);
       setAwards(prev => prev.map(a => a._id === awardId ? response.data : a));
       setSelectedAward(response.data);
       alert('Award updated successfully!');
@@ -1194,7 +1194,7 @@ const AwardsManagement = ({ data, onUpload, uploading, uploadProgress, onRefresh
   const deleteAward = async (awardId) => {
     if (window.confirm('Are you sure you want to delete this award?')) {
       try {
-        await axios.delete(`/api/awards/${awardId}`);
+        await axios.delete(`https://sateesh-kumar-portfolio.onrender.com/api/awards/${awardId}`);
         setAwards(prev => prev.filter(a => a._id !== awardId));
         if (selectedAward && selectedAward._id === awardId) {
           setSelectedAward(awards.length > 1 ? awards.find(a => a._id !== awardId) : null);
@@ -1218,7 +1218,7 @@ const AwardsManagement = ({ data, onUpload, uploading, uploadProgress, onRefresh
 
   const setMainImage = async (awardId, imageUrl) => {
     try {
-      await axios.put(`/api/awards/${awardId}`, { mainImage: imageUrl });
+      await axios.put(`https://sateesh-kumar-portfolio.onrender.com/api/awards/${awardId}`, { mainImage: imageUrl });
       onRefresh();
       alert('Main image set successfully!');
     } catch (error) {
@@ -1233,7 +1233,7 @@ const AwardsManagement = ({ data, onUpload, uploading, uploadProgress, onRefresh
         const award = awards.find(a => a._id === awardId);
         const updatedImages = (award.images || []).filter(img => img.url !== imageUrl);
         
-        await axios.put(`/api/awards/${awardId}`, {
+        await axios.put(`https://sateesh-kumar-portfolio.onrender.com/api/awards/${awardId}`, {
           ...award,
           images: updatedImages,
           mainImage: award.mainImage === imageUrl ? '' : award.mainImage
@@ -1565,7 +1565,7 @@ const AboutManagement = ({ data, onUpload, uploading, uploadProgress, onRefresh 
         order: sections.length
       };
       
-      const response = await axios.post('/api/about/sections', sectionToCreate);
+      const response = await axios.post('https://sateesh-kumar-portfolio.onrender.com/api/about/sections', sectionToCreate);
       setSections(prev => [...prev, response.data]);
       setSelectedSection(response.data);
       setNewSection({
@@ -1583,7 +1583,7 @@ const AboutManagement = ({ data, onUpload, uploading, uploadProgress, onRefresh 
 
   const updateSection = async (sectionId, updates) => {
     try {
-      const response = await axios.put(`/api/about/sections/${sectionId}`, updates);
+      const response = await axios.put(`https://sateesh-kumar-portfolio.onrender.com/api/about/sections/${sectionId}`, updates);
       setSections(prev => prev.map(s => s._id === sectionId ? response.data : s));
       setSelectedSection(response.data);
       setIsEditing(false);
@@ -1597,7 +1597,7 @@ const AboutManagement = ({ data, onUpload, uploading, uploadProgress, onRefresh 
   const deleteSection = async (sectionId) => {
     if (window.confirm('Are you sure you want to delete this section?')) {
       try {
-        await axios.delete(`/api/about/sections/${sectionId}`);
+        await axios.delete(`https://sateesh-kumar-portfolio.onrender.com/api/about/sections/${sectionId}`);
         setSections(prev => prev.filter(s => s._id !== sectionId));
         if (selectedSection && selectedSection._id === sectionId) {
           setSelectedSection(sections.length > 1 ? sections.find(s => s._id !== sectionId) : null);
@@ -1621,7 +1621,7 @@ const AboutManagement = ({ data, onUpload, uploading, uploadProgress, onRefresh 
   const deleteSectionImage = async (sectionId) => {
     if (window.confirm('Are you sure you want to delete this image?')) {
       try {
-        await axios.put(`/api/about/sections/${sectionId}`, { image: '' });
+        await axios.put(`https://sateesh-kumar-portfolio.onrender.com/api/about/sections/${sectionId}`, { image: '' });
         onRefresh();
         alert('Image deleted successfully!');
       } catch (error) {
@@ -1928,7 +1928,7 @@ const GalleryManagement = ({ data, onUpload, uploading, uploadProgress, onRefres
   const deleteGalleryItem = async (itemId) => {
     if (window.confirm('Are you sure you want to delete this image?')) {
       try {
-        await axios.delete(`/api/gallery/${itemId}`);
+        await axios.delete(`https://sateesh-kumar-portfolio.onrender.com/api/gallery/${itemId}`);
         setGallery(prev => prev.filter(item => item._id !== itemId));
         alert('Image deleted successfully!');
       } catch (error) {

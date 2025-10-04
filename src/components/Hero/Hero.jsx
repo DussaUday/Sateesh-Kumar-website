@@ -25,7 +25,7 @@ const Hero = () => {
 
   const fetchHeroData = async () => {
     try {
-      const response = await axios.get('/api/hero');
+      const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/hero');
       setHeroData(response.data);
     } catch (error) {
       console.error('Error fetching hero data:', error);

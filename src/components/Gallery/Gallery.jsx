@@ -91,10 +91,10 @@ const Gallery = () => {
       
       // Fetch from multiple endpoints (EXCLUDING HERO)
       const [galleryRes, awardsRes, servicesRes, aboutRes] = await Promise.all([
-        axios.get('/api/gallery?limit=100').catch(() => ({ data: [] })),
-        axios.get('/api/awards').catch(() => ({ data: [] })),
-        axios.get('/api/services').catch(() => ({ data: [] })),
-        axios.get('/api/about/sections').catch(() => ({ data: [] }))
+        axios.get('https://sateesh-kumar-portfolio.onrender.com/api/gallery?limit=100').catch(() => ({ data: [] })),
+        axios.get('https://sateesh-kumar-portfolio.onrender.com/api/awards').catch(() => ({ data: [] })),
+        axios.get('https://sateesh-kumar-portfolio.onrender.com/api/services').catch(() => ({ data: [] })),
+        axios.get('https://sateesh-kumar-portfolio.onrender.com/api/about/sections').catch(() => ({ data: [] }))
       ]);
 
       const allImagesData = [];

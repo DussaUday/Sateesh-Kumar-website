@@ -38,9 +38,9 @@ const Admin = () => {
     try {
       // Fetch existing data from API
       const [galleryRes, awardsRes, servicesRes] = await Promise.all([
-        axios.get('/api/gallery'),
-        axios.get('/api/awards'),
-        axios.get('/api/services')
+        axios.get('https://sateesh-kumar-portfolio.onrender.com/api/gallery'),
+        axios.get('https://sateesh-kumar-portfolio.onrender.com/api/awards'),
+        axios.get('https://sateesh-kumar-portfolio.onrender.com/api/services')
       ])
       setGalleryItems(galleryRes.data)
       setAwards(awardsRes.data)
@@ -71,7 +71,7 @@ const Admin = () => {
     try {
       const imageUrl = await handleImageUpload(item.image)
       const newItem = { ...item, image: imageUrl, createdAt: new Date() }
-      const response = await axios.post('/api/gallery', newItem)
+      const response = await axios.post('https://sateesh-kumar-portfolio.onrender.com/api/gallery', newItem)
       setGalleryItems(prev => [response.data, ...prev])
     } catch (error) {
       console.error('Error adding gallery item:', error)
@@ -80,7 +80,7 @@ const Admin = () => {
 
   const updateGalleryItem = async (id, updates) => {
     try {
-      const response = await axios.put(`/api/gallery/${id}`, updates)
+      const response = await axios.put(`https://sateesh-kumar-portfolio.onrender.com/api/gallery/${id}`, updates)
       setGalleryItems(prev => prev.map(item => 
         item._id === id ? response.data : item
       ))
@@ -91,7 +91,7 @@ const Admin = () => {
 
   const deleteGalleryItem = async (id) => {
     try {
-      await axios.delete(`/api/gallery/${id}`)
+      await axios.delete(`https://sateesh-kumar-portfolio.onrender.com/api/gallery/${id}`)
       setGalleryItems(prev => prev.filter(item => item._id !== id))
     } catch (error) {
       console.error('Error deleting gallery item:', error)

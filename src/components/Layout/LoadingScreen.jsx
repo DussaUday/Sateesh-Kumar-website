@@ -15,7 +15,7 @@ const LoadingScreen = ({ onLoadingComplete }) => {
 
   const fetchProfileImage = async () => {
     try {
-      const response = await axios.get('/api/gallery?category=profile&limit=1');
+      const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/gallery?category=profile&limit=1');
       if (response.data.length > 0) {
         setProfileImage(response.data[0].image);
       } else {

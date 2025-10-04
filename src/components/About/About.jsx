@@ -13,7 +13,7 @@ const About = () => {
 
   const fetchAboutSections = async () => {
     try {
-      const response = await axios.get('/api/about/sections');
+      const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/about/sections');
       setAboutSections(response.data);
     } catch (error) {
       console.error('Error fetching about sections:', error);
