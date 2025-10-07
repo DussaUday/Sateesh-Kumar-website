@@ -57,6 +57,7 @@ const Hero = () => {
 
   const texts = [
     heroData?.subtitle || "Service Is My Passion",
+    "Leadership is service, not status."
   ];
 
   useEffect(() => {
