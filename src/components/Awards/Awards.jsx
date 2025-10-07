@@ -216,7 +216,7 @@ const Awards = () => {
             >
               <Trophy className="w-12 h-12 text-yellow-500" />
               <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-gray-800 via-yellow-600 to-orange-600 dark:from-white dark:via-yellow-400 dark:to-orange-400 bg-clip-text text-transparent">
-                {t('awards.title')}
+                {t('Awards & Achievements')}
               </h2>
               <Trophy className="w-12 h-12 text-yellow-500" />
             </motion.div>
