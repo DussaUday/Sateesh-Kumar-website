@@ -117,13 +117,7 @@ const AdminLogin = ({ onLogin }) => {
         </form>
 
         {/* Demo Credentials */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-          <p className="text-sm text-blue-700 text-center">
-            <strong>Admin Credentials:</strong><br />
-            Username: <code>SateeshKumar</code><br />
-            Password: <code>Sateesh Kumar123</code>
-          </p>
-        </div>
+        
       </motion.div>
     </div>
   );
