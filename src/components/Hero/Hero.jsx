@@ -25,7 +25,7 @@ const Hero = () => {
 
   const fetchHeroData = async () => {
     try {
-      const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/hero');
+      const response = await axios.get('https://sateesh-kumar-portfolio.vercel.app/api/hero');
       setHeroData(response.data);
     } catch (error) {
       console.error('Error fetching hero data:', error);
@@ -44,7 +44,7 @@ const Hero = () => {
 
   const fetchProfileImage = async () => {
     try {
-      const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/gallery?category=profile&limit=1');
+      const response = await axios.get('https://sateesh-kumar-portfolio.vercel.app/api/gallery?category=profile&limit=1');
       if (response.data.length > 0) {
         setProfileImage(response.data[0].image);
       } else {
