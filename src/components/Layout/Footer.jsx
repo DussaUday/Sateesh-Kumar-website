@@ -54,7 +54,7 @@ const Footer = () => {
               Puttagunta Venkata Sateesh Kumar
             </h3>
             <p className="text-gray-300 mb-6 text-lg leading-relaxed">
-              {t('hero.subtitle')}
+              {t('Service Is My Passion.')}
             </p>
             <motion.div
               whileHover={{ scale: 1.05 }}
