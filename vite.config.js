@@ -7,7 +7,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'https://sateesh-kumar-portfolio.onrender.com',
+        target: 'https://sateesh-kumar-portfolio.vercel.app',
         changeOrigin: true
       }
     }
