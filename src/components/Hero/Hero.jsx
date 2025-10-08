@@ -59,7 +59,7 @@ const Hero = () => {
     heroData?.subtitle || "Service Is My Passion.",
     "Service defines true leadership.",
     "True entrepreneurs lead by serving others.",
-    "His service turns vision into legacy."
+    "My service turns vision into legacy."
   ];
 
   useEffect(() => {
