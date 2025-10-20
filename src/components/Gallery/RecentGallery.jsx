@@ -50,23 +50,29 @@ const RecentGallery = () => {
     setImageLoaded(true);
   };
 
-  const getObjectFit = (aspectRatio) => {
-    if (aspectRatio > 1.5) {
-      return 'object-cover';
-    } else if (aspectRatio < 0.7) {
-      return 'object-contain';
-    } else {
-      return 'object-contain';
-    }
+  const getImageContainerClass = (aspectRatio) => {
+    // Fixed container size for all images
+    return 'w-full h-[400px] md:h-[500px] lg:h-[600px]';
   };
 
-  const getMaxHeight = (aspectRatio) => {
-    if (aspectRatio < 0.7) {
-      return 'max-h-[70vh]';
-    } else if (aspectRatio > 1.8) {
-      return 'max-h-[50vh]';
-    } else {
-      return 'max-h-[60vh]';
+  const getImageStyle = (aspectRatio) => {
+    // For landscape images (wider than tall)
+    if (aspectRatio > 1) {
+      return {
+        width: '100%',
+        height: 'auto',
+        maxHeight: '100%',
+        objectFit: 'contain'
+      };
+    }
+    // For portrait images (taller than wide)
+    else {
+      return {
+        width: 'auto',
+        height: '100%',
+        maxWidth: '100%',
+        objectFit: 'contain'
+      };
     }
   };
 
@@ -269,8 +275,8 @@ const RecentGallery = () => {
   }
 
   const currentImage = allImages[currentIndex];
-  const objectFitClass = imageLoaded ? getObjectFit(imageDimensions.aspectRatio) : 'object-cover';
-  const maxHeightClass = imageLoaded ? getMaxHeight(imageDimensions.aspectRatio) : 'max-h-[60vh]';
+  const imageContainerClass = getImageContainerClass(imageDimensions.aspectRatio);
+  const imageStyle = imageLoaded ? getImageStyle(imageDimensions.aspectRatio) : {};
   const contentPaddingClass = imageLoaded ? getContentPadding(imageDimensions.aspectRatio) : 'p-4 md:p-6';
 
   return (
@@ -371,7 +377,7 @@ const RecentGallery = () => {
         {/* Main Carousel */}
         <div className="relative max-w-6xl mx-auto">
           {/* Carousel Container */}
-          <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gray-200 dark:bg-gray-800 min-h-[300px] md:min-h-[400px] border-2 border-amber-300/50 dark:border-amber-700/50">
+          <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gray-200 dark:bg-gray-800 border-2 border-amber-300/50 dark:border-amber-700/50">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}
@@ -379,79 +385,74 @@ const RecentGallery = () => {
                 animate={{ opacity: imageLoaded ? 1 : 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.7, ease: "easeInOut" }}
-                className="flex items-center justify-center w-full h-full"
+                className="flex items-center justify-center w-full"
               >
-                {/* Image Container */}
-                <div className={`w-full ${maxHeightClass} flex items-center justify-center bg-gray-100 dark:bg-gray-900`}>
+                {/* Image Container - Fixed Size */}
+                <div className={`${imageContainerClass} flex items-center justify-center bg-gray-100 dark:bg-gray-900 relative overflow-hidden`}>
                   <img
                     src={currentImage?.image}
                     alt={currentImage?.title}
-                    className={`w-full h-full ${objectFitClass} transition-all duration-500`}
+                    style={imageStyle}
+                    className="transition-all duration-500"
                     onLoad={handleImageLoad}
                   />
-                </div>
-                
-                {/* Loading State */}
-                {!imageLoaded && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
-                    <motion.div
-                      animate={{ rotate: 360, scale: [1, 1.2, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="w-16 h-16 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-full flex items-center justify-center"
+                  
+                  {/* Loading State */}
+                  {!imageLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
+                      <motion.div
+                        animate={{ rotate: 360, scale: [1, 1.2, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="w-16 h-16 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-full flex items-center justify-center"
+                      >
+                        <Sparkles className="w-8 h-8 text-white" />
+                      </motion.div>
+                    </div>
+                  )}
+                  
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                  
+                  {/* Content Overlay */}
+                  <div className={`absolute bottom-0 left-0 right-0 ${contentPaddingClass} text-white`}>
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <motion.div 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="flex items-center space-x-2 px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm border border-amber-300/30"
+                      >
+                        {currentImage?.icon && (
+                          <currentImage.icon className="w-3 h-3 md:w-4 md:h-4 text-amber-300" />
+                        )}
+                        <span className="text-xs md:text-sm font-medium capitalize text-amber-100">{currentImage?.type}</span>
+                      </motion.div>
+                      <motion.div 
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="px-3 py-1 bg-amber-500/80 rounded-full backdrop-blur-sm border border-amber-300/30"
+                      >
+                        <span className="text-xs md:text-sm font-medium capitalize text-white">{currentImage?.category}</span>
+                      </motion.div>
+                    </div>
+                    <motion.h3 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 }}
+                      className="text-lg md:text-xl lg:text-2xl font-bold mb-2 line-clamp-2 font-serif"
                     >
-                      <Sparkles className="w-8 h-8 text-white" />
-                    </motion.div>
+                      {currentImage?.title}
+                    </motion.h3>
+                    <motion.p 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.6 }}
+                      className="text-white/80 text-sm md:text-base line-clamp-2 font-light"
+                    >
+                      {currentImage?.description}
+                    </motion.p>
                   </div>
-                )}
-                
-                {/* Gradient Overlay */}
-                <div 
-                  className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent ${
-                    imageDimensions.aspectRatio > 1.5 ? 'via-black/20' : 'via-black/50'
-                  }`}
-                />
-                
-                {/* Content Overlay */}
-                <div className={`absolute bottom-0 left-0 right-0 ${contentPaddingClass} text-white ${
-                  imageDimensions.aspectRatio < 0.8 ? 'bg-gradient-to-t from-black/90 to-transparent' : ''
-                }`}>
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <motion.div 
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3 }}
-                      className="flex items-center space-x-2 px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm border border-amber-300/30"
-                    >
-                      {currentImage?.icon && (
-                        <currentImage.icon className="w-3 h-3 md:w-4 md:h-4 text-amber-300" />
-                      )}
-                      <span className="text-xs md:text-sm font-medium capitalize text-amber-100">{currentImage?.type}</span>
-                    </motion.div>
-                    <motion.div 
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4 }}
-                      className="px-3 py-1 bg-amber-500/80 rounded-full backdrop-blur-sm border border-amber-300/30"
-                    >
-                      <span className="text-xs md:text-sm font-medium capitalize text-white">{currentImage?.category}</span>
-                    </motion.div>
-                  </div>
-                  <motion.h3 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="text-lg md:text-xl lg:text-2xl font-bold mb-2 line-clamp-2 font-serif"
-                  >
-                    {currentImage?.title}
-                  </motion.h3>
-                  <motion.p 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 }}
-                    className="text-white/80 text-sm md:text-base line-clamp-2 font-light"
-                  >
-                    {currentImage?.description}
-                  </motion.p>
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -520,11 +521,11 @@ const RecentGallery = () => {
                   }`}
                   onClick={() => goToSlide(index)}
                 >
-                  <div className="w-14 h-14 md:w-16 md:h-16 lg:w-18 lg:h-18">
+                  <div className="w-14 h-14 md:w-16 md:h-16 lg:w-18 lg:h-18 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
                     <img
                       src={item.image}
                       alt={item.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   </div>
                   
@@ -566,16 +567,6 @@ const RecentGallery = () => {
             ))}
           </motion.div>
         </div>
-
-        {/* Stats Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-12 text-center"
-        >
-          
-        </motion.div>
 
         {/* CTA Section */}
         <motion.div

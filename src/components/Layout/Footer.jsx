@@ -20,11 +20,10 @@ const Footer = () => {
   
 
   const socialLinks = [
-    { icon: Facebook, href: '#', name: 'Facebook' },
+    { icon: Facebook, href: 'https://www.facebook.com/puttaguntavsateeshofficial/', name: 'Facebook' },
     { icon: Twitter, href: '#', name: 'Twitter' },
-    { icon: Instagram, href: '#', name: 'Instagram' },
-    { icon: Linkedin, href: '#', name: 'LinkedIn' },
-    { icon: Youtube, href: '#', name: 'YouTube' } // Added YouTube
+    { icon: Instagram, href: 'https://www.instagram.com/puttagunta_v_sateesh/', name: 'Instagram' },
+    { icon: Youtube, href: 'https://www.youtube.com/@PuttaguntaVSateesh', name: 'YouTube' } // Added YouTube
   ];
 
   return (
