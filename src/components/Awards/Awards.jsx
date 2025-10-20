@@ -1,269 +1,318 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { Award, Star, Trophy, Medal, Crown, Zap, Sparkles, X, ChevronLeft, ChevronRight, Image as ImageIcon, Search, ArrowRight, ArrowLeft } from 'lucide-react'
+import { 
+  Award, Star, Trophy, Medal, Crown, Zap, Sparkles, X, 
+  ChevronLeft, ChevronRight, Image as ImageIcon, Search, 
+  ArrowRight, Filter, Clock, Grid, List, Eye
+} from 'lucide-react'
 import axios from 'axios'
+
+// Helper function to get all images for an award
+const getAllImages = (award) => {
+  const images = []
+  
+  // Add main image first if it exists
+  if (award.mainImage) {
+    images.push({
+      url: award.mainImage,
+      title: `${award.title} - Main Image`,
+      isMain: true
+    })
+  }
+  
+  // Add other images
+  if (award.images && award.images.length > 0) {
+    award.images.forEach(img => {
+      if (img.url !== award.mainImage) {
+        images.push({
+          url: img.url,
+          title: img.title,
+          isMain: false
+        })
+      }
+    })
+  }
+  
+  return images
+}
 
 const Awards = () => {
   const { t } = useTranslation()
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [awards, setAwards] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [selectedAward, setSelectedAward] = useState(null)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [displayCount, setDisplayCount] = useState(6) // Show 6 awards initially (2 rows of 3)
-  const awardsPerLoad = 6 // Load 6 more awards each time
+  const [displayCount, setDisplayCount] = useState(8)
+  const [viewMode, setViewMode] = useState('grid')
+  const awardsPerLoad = 8
 
-  // Fetch awards from backend API
   useEffect(() => {
-    const fetchAwards = async () => {
-      try {
-        setLoading(true)
-        const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/awards')
-        console.log('Fetched awards:', response.data)
-        setAwards(response.data)
-        setError(null)
-      } catch (err) {
-        console.error('Error fetching awards:', err)
-        setError('Failed to load awards')
-        // Fallback to empty array if API fails
-        setAwards([])
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchAwards()
   }, [])
 
-  // Map backend data to frontend format
+  const fetchAwards = async () => {
+    try {
+      setLoading(true)
+      const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/awards')
+      const transformedData = response.data
+        .map(award => ({
+          ...award,
+          icon: getAwardIcon(award.category),
+          gradient: getAwardGradient(award.category),
+          allImages: getAllImages(award)
+        }))
+        .sort((a, b) => parseInt(b.year) - parseInt(a.year))
+      
+      setAwards(transformedData)
+    } catch (err) {
+      console.error('Error fetching awards:', err)
+      setAwards([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getAwardIcon = (category) => {
     const iconMap = {
-      'social-work': Crown,
-      'community': Star,
-      'leadership': Award,
-      'achievement': Medal,
-      'recognition': Trophy,
-      'prestigious': Crown,
-      'international': Zap,
-      'performance': Star,
-      'organizational': Medal
+      'social-work': Crown, 'community': Award, 'leadership': Trophy, 'achievement': Medal,
+      'recognition': Star, 'prestigious': Crown, 'international': Zap, 'performance': Star, 
+      'organizational': Medal, 'service': Award, 'excellence': Trophy
     }
     return iconMap[category] || Award
   }
 
   const getAwardGradient = (category) => {
     const gradientMap = {
-      'social-work': 'from-yellow-400 to-orange-500',
-      'community': 'from-blue-400 to-purple-500',
-      'leadership': 'from-green-400 to-emerald-500',
-      'achievement': 'from-pink-400 to-rose-500',
-      'recognition': 'from-indigo-400 to-blue-500',
-      'prestigious': 'from-yellow-400 to-orange-500',
-      'international': 'from-blue-400 to-purple-500',
-      'performance': 'from-green-400 to-emerald-500',
-      'organizational': 'from-pink-400 to-rose-500'
+      'social-work': 'from-amber-400 to-yellow-600',
+      'community': 'from-rose-500 to-maroon-700',
+      'leadership': 'from-amber-500 to-orange-600',
+      'achievement': 'from-rose-600 to-maroon-800',
+      'recognition': 'from-yellow-400 to-amber-600',
+      'prestigious': 'from-amber-400 to-yellow-600',
+      'international': 'from-rose-500 to-maroon-700',
+      'performance': 'from-amber-500 to-orange-600',
+      'organizational': 'from-rose-600 to-maroon-800',
+      'service': 'from-yellow-400 to-amber-600',
+      'excellence': 'from-amber-400 to-yellow-600'
     }
-    return gradientMap[category] || 'from-gray-400 to-gray-600'
+    return gradientMap[category] || 'from-amber-400 to-yellow-600'
   }
 
-  const getDefaultAchievements = (category) => {
-    const achievementsMap = {
-      'social-work': ['Community Impact', 'Social Welfare', 'Service Excellence'],
-      'community': ['Local Development', 'Public Service', 'Community Engagement'],
-      'leadership': ['Visionary Leadership', 'Team Management', 'Strategic Planning'],
-      'achievement': ['Performance Excellence', 'Goal Achievement', 'Outstanding Results'],
-      'recognition': ['Professional Recognition', 'Peer Acknowledgement', 'Industry Honor']
-    }
-    return achievementsMap[category] || ['Excellence', 'Achievement', 'Recognition']
-  }
+  const categories = useMemo(() => ([
+    { id: 'all', name: 'All Awards', count: awards.length },
+    { id: 'social-work', name: 'Social Work', count: awards.filter(a => a.category === 'social-work').length },
+    { id: 'community', name: 'Community', count: awards.filter(a => a.category === 'community').length },
+    { id: 'leadership', name: 'Leadership', count: awards.filter(a => a.category === 'leadership').length },
+    { id: 'achievement', name: 'Achievement', count: awards.filter(a => a.category === 'achievement').length },
+    { id: 'recognition', name: 'Recognition', count: awards.filter(a => a.category === 'recognition').length }
+  ]), [awards])
 
-  // Transform backend data to frontend format and sort by year (most recent first)
-  const transformedAwards = awards
-    .map(award => ({
-      id: award._id,
-      icon: getAwardIcon(award.category),
-      title: award.title,
-      description: award.description || `${award.title} award received in ${award.year}`,
-      year: award.year.toString(),
-      category: award.category,
-      gradient: getAwardGradient(award.category),
-      achievements: award.achievements && award.achievements.length > 0 
-        ? award.achievements 
-        : getDefaultAchievements(award.category),
-      organization: award.organization,
-      images: award.images || [],
-      mainImage: award.mainImage
-    }))
-    .sort((a, b) => parseInt(b.year) - parseInt(a.year)) // Sort by year descending (most recent first)
+  const filteredAwards = useMemo(() => {
+    return awards.filter(award => {
+      const matchesCategory = selectedCategory === 'all' || award.category === selectedCategory
+      const matchesSearch = searchQuery === '' || 
+        award.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        award.organization?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        award.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      return matchesCategory && matchesSearch
+    })
+  }, [awards, selectedCategory, searchQuery])
 
-  const categories = [
-    { id: 'all', name: 'All Awards', count: transformedAwards.length },
-    { id: 'social-work', name: 'Social Work', count: transformedAwards.filter(a => a.category === 'social-work').length },
-    { id: 'community', name: 'Community', count: transformedAwards.filter(a => a.category === 'community').length },
-    { id: 'leadership', name: 'Leadership', count: transformedAwards.filter(a => a.category === 'leadership').length },
-    { id: 'achievement', name: 'Achievement', count: transformedAwards.filter(a => a.category === 'achievement').length },
-    { id: 'recognition', name: 'Recognition', count: transformedAwards.filter(a => a.category === 'recognition').length }
-  ]
-
-  // Filter awards based on selected category and search query
-  const filteredAwards = transformedAwards.filter(award => {
-    const matchesCategory = selectedCategory === 'all' || award.category === selectedCategory
-    const matchesSearch = searchQuery === '' || 
-      award.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      award.organization?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      award.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      award.achievements.some(achievement => 
-        achievement.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    return matchesCategory && matchesSearch
-  })
-
-  // Get awards to display (limited by displayCount)
   const displayedAwards = filteredAwards.slice(0, displayCount)
-
-  // Check if there are more awards to load
   const hasMoreAwards = displayCount < filteredAwards.length
 
-  // Load more awards
   const loadMoreAwards = () => {
     setDisplayCount(prev => prev + awardsPerLoad)
   }
 
-  // Reset display count when filters change
   useEffect(() => {
-    setDisplayCount(6)
+    setDisplayCount(8)
   }, [selectedCategory, searchQuery])
 
-  // Open image gallery modal
   const openImageGallery = (award, index = 0) => {
     setSelectedAward(award)
     setSelectedImageIndex(index)
     setIsModalOpen(true)
   }
 
-  // Close image gallery modal
   const closeImageGallery = () => {
     setIsModalOpen(false)
     setSelectedAward(null)
     setSelectedImageIndex(0)
   }
 
-  // Navigate to next image
   const nextImage = () => {
     if (selectedAward) {
-      const images = getAllImages(selectedAward)
-      setSelectedImageIndex((prev) => (prev + 1) % images.length)
+      setSelectedImageIndex((prev) => (prev + 1) % selectedAward.allImages.length)
     }
   }
 
-  // Navigate to previous image
   const prevImage = () => {
     if (selectedAward) {
-      const images = getAllImages(selectedAward)
-      setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length)
+      setSelectedImageIndex((prev) => (prev - 1 + selectedAward.allImages.length) % selectedAward.allImages.length)
     }
   }
 
-  // Show loading state
   if (loading) {
     return (
-      <section id="awards" className="py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-yellow-500 mx-auto"></div>
-            <p className="text-gray-600 dark:text-gray-400 mt-4 text-lg">Loading awards...</p>
-          </div>
-        </div>
-      </section>
-    )
-  }
-
-  // Show error state
-  if (error && awards.length === 0) {
-    return (
-      <section id="awards" className="py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <Trophy className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-4">Unable to Load Awards</h2>
-            <p className="text-gray-600 dark:text-gray-400">{error}</p>
-          </div>
-        </div>
+      <section id="awards" className="relative py-16 bg-gradient-to-br from-stone-50 via-stone-100 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black overflow-hidden min-h-[60vh] flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative z-10 text-center"
+        >
+          <motion.div
+            animate={{ rotate: 360, scale: [1, 1.2, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="w-20 h-20 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4"
+          >
+            <Sparkles className="w-10 h-10 text-white" />
+          </motion.div>
+          <p className="text-gray-600 dark:text-gray-300 font-serif text-lg">Loading awards...</p>
+        </motion.div>
       </section>
     )
   }
 
   return (
     <>
-      <section id="awards" className="py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900">
-        <div className="container mx-auto px-4">
+      <section id="awards" className="relative py-16 bg-gradient-to-br from-stone-50 via-stone-100 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black overflow-hidden">
+        
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Floating Particles */}
+          {[...Array(15)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 bg-amber-400/20 rounded-full"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                y: [0, -30, 0],
+                opacity: [0, 1, 0],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="container mx-auto px-4 relative z-10">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center mb-16"
+            className="text-center mb-12"
           >
-            <motion.div
-              initial={{ scale: 0 }}
-              whileInView={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring" }}
-              className="inline-flex items-center space-x-4 mb-6"
+            <motion.h2
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="text-4xl md:text-5xl lg:text-6xl font-black font-serif text-gray-800 dark:text-white mb-4"
             >
-              <Trophy className="w-12 h-12 text-yellow-500" />
-              <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-gray-800 via-yellow-600 to-orange-600 dark:from-white dark:via-yellow-400 dark:to-orange-400 bg-clip-text text-transparent">
-                {t('awards.title')}
-              </h2>
-              <Trophy className="w-12 h-12 text-yellow-500" />
-            </motion.div>
-            <motion.div
-              initial={{ width: 0 }}
-              whileInView={{ width: 200 }}
-              transition={{ delay: 0.5, duration: 1 }}
-              className="h-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 mx-auto rounded-full shadow-lg"
-            />
+              <span className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
+                Awards & Achievements
+              </span>
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto font-serif italic"
+            >
+              "Celebrating excellence and dedicated service to the community"
+            </motion.p>
+
+            {/* Search and Controls */}
+            {awards.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="max-w-4xl mx-auto mt-8"
+              >
+                <div className="flex flex-col md:flex-row gap-4 items-center justify-center">
+                  {/* Search Input */}
+                  <div className="relative flex-1 w-full md:max-w-md">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      placeholder="Search awards..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-amber-200/50 dark:border-amber-700/30 rounded-2xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-300"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* View Mode Toggle */}
+                  <div className="flex gap-2">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setViewMode('grid')}
+                      className={`flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 ${
+                        viewMode === 'grid' 
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-lg shadow-amber-500/25' 
+                          : 'bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 border border-amber-200/50 dark:border-amber-700/30'
+                      }`}
+                    >
+                      <Grid className="w-4 h-4" />
+                      <span className="hidden sm:inline">Grid</span>
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setViewMode('list')}
+                      className={`flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 ${
+                        viewMode === 'list' 
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-lg shadow-amber-500/25' 
+                          : 'bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 border border-amber-200/50 dark:border-amber-700/30'
+                      }`}
+                    >
+                      <List className="w-4 h-4" />
+                      <span className="hidden sm:inline">List</span>
+                    </motion.button>
+                  </div>
+                </div>
+
+                {/* Results Count */}
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center text-gray-500 dark:text-gray-400 mt-4 text-sm"
+                >
+                  Showing {displayedAwards.length} of {filteredAwards.length} awards
+                  {searchQuery && ` for "${searchQuery}"`}
+                </motion.p>
+              </motion.div>
+            )}
           </motion.div>
 
-          {/* Search Bar */}
-          {transformedAwards.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="max-w-2xl mx-auto mb-12"
-            >
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search awards by title, organization, or achievement..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-6 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-600 rounded-2xl shadow-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Category Filter */}
-          {transformedAwards.length > 0 && (
+          {/* Category Filters */}
+          {awards.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="flex flex-wrap justify-center gap-4 mb-12"
+              className="flex flex-wrap justify-center gap-3 mb-8 px-2"
             >
               {categories.map((category) => (
                 <CategoryButton
@@ -276,34 +325,19 @@ const Awards = () => {
             </motion.div>
           )}
 
-          {/* Results Count */}
-          {transformedAwards.length > 0 && searchQuery && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center mb-8"
-            >
-              <p className="text-gray-600 dark:text-gray-400">
-                Found {filteredAwards.length} award{filteredAwards.length !== 1 ? 's' : ''} 
-                {searchQuery && ` for "${searchQuery}"`}
-              </p>
-            </motion.div>
-          )}
-
-          {/* Awards Grid */}
-          {transformedAwards.length === 0 ? (
+          {awards.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               className="text-center py-12"
             >
-              <Trophy className="w-24 h-24 text-gray-400 mx-auto mb-6" />
+              <Award className="w-24 h-24 text-gray-400 mx-auto mb-6" />
               <h3 className="text-2xl font-bold text-gray-600 dark:text-gray-400 mb-4">
                 No Awards Yet
               </h3>
               <p className="text-gray-500 dark:text-gray-500 max-w-md mx-auto">
-                Awards will appear here once they are added through the admin dashboard.
+                Awards will appear here once they are added.
               </p>
             </motion.div>
           ) : filteredAwards.length === 0 ? (
@@ -318,72 +352,61 @@ const Awards = () => {
                 No Awards Found
               </h3>
               <p className="text-gray-500 dark:text-gray-500 max-w-md mx-auto">
-                No awards match your search criteria. Try adjusting your search or filters.
+                Try adjusting your search or filters.
               </p>
             </motion.div>
           ) : (
             <>
-              <motion.div
-                layout
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12"
-              >
-                <AnimatePresence>
-                  {displayedAwards.map((award, index) => (
-                    <AwardCard 
-                      key={award.id || award.title} 
-                      award={award} 
-                      index={index}
-                      onViewImages={openImageGallery}
-                    />
-                  ))}
-                </AnimatePresence>
-              </motion.div>
+              {/* Awards Grid/List */}
+              <div className="max-w-7xl mx-auto">
+                {viewMode === 'grid' ? (
+                  <AwardsGridView 
+                    awards={displayedAwards}
+                    onViewImages={openImageGallery}
+                  />
+                ) : (
+                  <AwardsListView 
+                    awards={displayedAwards}
+                    onViewImages={openImageGallery}
+                  />
+                )}
 
-              {/* Load More Button */}
-              {hasMoreAwards && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  className="text-center"
-                >
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={loadMoreAwards}
-                    className="inline-flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-semibold rounded-2xl shadow-lg shadow-yellow-500/25 hover:shadow-xl transition-all duration-300"
+                {/* Load More Button */}
+                {hasMoreAwards && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    className="text-center mt-12"
                   >
-                    <span>Load More Awards</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </motion.button>
-                  <p className="text-gray-600 dark:text-gray-400 mt-4 text-sm">
-                    Showing {displayedAwards.length} of {filteredAwards.length} awards
-                  </p>
-                </motion.div>
-              )}
+                    <motion.button
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={loadMoreAwards}
+                      className="flex items-center space-x-3 px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-amber-400 mx-auto"
+                    >
+                      <Eye className="w-5 h-5" />
+                      <span className="font-semibold">Load More Awards</span>
+                    </motion.button>
+                  </motion.div>
+                )}
 
-              {/* Show all loaded message */}
-              {!hasMoreAwards && filteredAwards.length > 6 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center mt-8"
-                >
-                  <p className="text-gray-600 dark:text-gray-400 text-lg font-semibold">
-                    🎉 All {filteredAwards.length} awards loaded!
-                  </p>
-                </motion.div>
-              )}
+                {!hasMoreAwards && filteredAwards.length > 8 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center mt-8"
+                  >
+                    <p className="text-gray-600 dark:text-gray-400 text-lg font-semibold">
+                      All {filteredAwards.length} awards loaded
+                    </p>
+                  </motion.div>
+                )}
+              </div>
             </>
-          )}
-
-          {/* Achievements Section - Only show if there are awards */}
-          {transformedAwards.length > 0 && (
-            <AchievementsSection awards={transformedAwards} />
           )}
         </div>
       </section>
 
-      {/* Image Gallery Modal */}
       <ImageGalleryModal
         isOpen={isModalOpen}
         onClose={closeImageGallery}
@@ -403,39 +426,69 @@ const CategoryButton = ({ category, isSelected, onClick }) => {
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className={`relative px-6 py-3 rounded-2xl font-semibold transition-all duration-300 ${
+      className={`relative px-4 py-2 rounded-2xl font-medium text-sm transition-all duration-300 ${
         isSelected
-          ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg shadow-yellow-500/25'
-          : 'bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 backdrop-blur-sm border border-gray-200 dark:border-gray-600 hover:shadow-xl'
+          ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-lg shadow-amber-500/25'
+          : 'bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 backdrop-blur-sm border border-amber-200/50 dark:border-amber-700/50 hover:shadow-xl'
       }`}
     >
       <span className="relative z-10 flex items-center space-x-2">
         <span>{category.name}</span>
         <span className={`px-2 py-1 rounded-full text-xs ${
-          isSelected ? 'bg-white/20' : 'bg-gray-100 dark:bg-gray-700'
+          isSelected ? 'bg-white/20' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
         }`}>
           {category.count}
         </span>
       </span>
-      
-      {isSelected && (
-        <motion.div
-          layoutId="categoryBackground"
-          className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl"
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        />
-      )}
     </motion.button>
   )
 }
 
-const AwardCard = ({ award, index, onViewImages }) => {
+const AwardsGridView = ({ awards, onViewImages }) => {
+  return (
+    <motion.div 
+      layout
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-2"
+    >
+      <AnimatePresence>
+        {awards.map((award, index) => (
+          <AwardGridCard
+            key={award._id}
+            award={award}
+            index={index}
+            onViewImages={onViewImages}
+          />
+        ))}
+      </AnimatePresence>
+    </motion.div>
+  )
+}
+
+const AwardsListView = ({ awards, onViewImages }) => {
+  return (
+    <motion.div layout className="space-y-4 px-2">
+      <AnimatePresence>
+        {awards.map((award, index) => (
+          <AwardListCard
+            key={award._id}
+            award={award}
+            index={index}
+            onViewImages={onViewImages}
+          />
+        ))}
+      </AnimatePresence>
+    </motion.div>
+  )
+}
+
+const AwardGridCard = ({ award, index, onViewImages }) => {
   const [isHovered, setIsHovered] = useState(false)
-  const allImages = getAllImages(award)
+  const hasImages = award.allImages.length > 0
+  const mainImage = hasImages ? award.allImages[0] : null
 
   const handleCardClick = () => {
-    if (allImages.length > 0) {
-      onViewImages(award, 0) // Start with first image (main image)
+    if (hasImages) {
+      onViewImages(award, 0)
     }
   }
 
@@ -445,141 +498,180 @@ const AwardCard = ({ award, index, onViewImages }) => {
       initial={{ opacity: 0, scale: 0.8, y: 50 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.8, y: -50 }}
-      transition={{ duration: 0.6, delay: index * 0.1 }}
-      whileHover={{ 
-        y: -10,
-        scale: 1.02,
-        transition: { duration: 0.2 }
-      }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      whileHover={{ y: -5, scale: 1.02 }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       onClick={handleCardClick}
-      className={`group relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl p-6 shadow-2xl border border-white/20 dark:border-gray-700/50 overflow-hidden cursor-pointer ${
-        allImages.length > 0 ? 'hover:ring-2 hover:ring-yellow-400' : ''
+      className={`group relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer border border-amber-200/50 dark:border-amber-700/50 shadow-lg hover:shadow-xl transition-all duration-300 ${
+        hasImages ? 'hover:ring-2 hover:ring-amber-400' : ''
       }`}
     >
-      {/* Recent Badge for awards from current year */}
-      {parseInt(award.year) === new Date().getFullYear() && (
-        <div className="absolute top-4 left-4 z-20">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center space-x-1"
-          >
-            <Sparkles className="w-3 h-3" />
-            <span>New</span>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Image count badge */}
-      {allImages.length > 0 && (
-        <div className="absolute top-4 right-4 z-20">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="flex items-center space-x-1 bg-black/70 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm"
-          >
-            <ImageIcon className="w-4 h-4" />
-            <span>{allImages.length}</span>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Preview image (show main image if available) */}
-      {allImages.length > 0 && (
-        <div className="absolute inset-0 overflow-hidden rounded-3xl">
+      {/* Image Section - Always show if available */}
+      {hasImages && mainImage && (
+        <div className="relative h-48 overflow-hidden">
           <img
-            src={allImages[0].url}
-            alt={allImages[0].title}
-            className="w-full h-32 object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-300"
+            src={mainImage.url}
+            alt={award.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+          
+          {/* Image Count Badge */}
+          {award.allImages.length > 1 && (
+            <div className="absolute top-3 right-3 bg-black/70 text-white px-2 py-1 rounded-full text-xs backdrop-blur-sm">
+              {award.allImages.length}
+            </div>
+          )}
+
+          {/* Year Badge */}
+          <div className="absolute top-3 left-3">
+            <span className={`px-3 py-1 bg-gradient-to-r ${award.gradient} text-white text-sm font-semibold rounded-full shadow-lg`}>
+              {award.year}
+            </span>
+          </div>
+
+          {/* New Badge */}
+          {parseInt(award.year) === new Date().getFullYear() && (
+            <div className="absolute top-12 left-3">
+              <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center space-x-1">
+                <Sparkles className="w-3 h-3" />
+                <span>New</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Animated background */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${award.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
+      {/* Content Section */}
+      <div className="p-4">
+        {/* Icon and Title */}
+        <div className="flex items-center space-x-3 mb-3">
+          <motion.div
+            animate={{ rotate: isHovered ? 360 : 0, scale: isHovered ? 1.1 : 1 }}
+            transition={{ duration: 0.6 }}
+            className={`w-12 h-12 bg-gradient-to-r ${award.gradient} rounded-xl flex items-center justify-center shadow-lg flex-shrink-0`}
+          >
+            <award.icon className="w-6 h-6 text-white" />
+          </motion.div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white line-clamp-2 leading-tight">
+              {award.title}
+            </h3>
+            {award.organization && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                {award.organization}
+              </p>
+            )}
+          </div>
+        </div>
 
-      {/* Icon */}
-      <motion.div
-        animate={{ 
-          rotate: isHovered ? 360 : 0,
-          scale: isHovered ? 1.1 : 1
-        }}
-        transition={{ duration: 0.6 }}
-        className={`w-20 h-20 bg-gradient-to-r ${award.gradient} rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-lg relative z-10`}
-      >
-        <award.icon className="w-10 h-10 text-white" />
-      </motion.div>
-
-      {/* Content */}
-      <div className="relative z-10">
-        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3 text-center leading-tight">
-          {award.title}
-        </h3>
-        
-        {award.organization && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-2">
-            {award.organization}
-          </p>
-        )}
-        
-        <p className="text-gray-600 dark:text-gray-300 mb-4 text-center text-sm leading-relaxed">
+        {/* Description */}
+        <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mb-3 leading-relaxed">
           {award.description}
         </p>
 
-        {/* Year */}
-        <div className="flex justify-center mb-4">
-          <span className={`px-4 py-2 bg-gradient-to-r ${award.gradient} text-white text-sm font-semibold rounded-full shadow-lg`}>
-            {award.year}
-          </span>
-        </div>
-
-        {/* Achievements */}
-        <div className="flex flex-wrap justify-center gap-2">
-          {award.achievements.slice(0, 3).map((achievement, i) => (
-            <motion.span
-              key={achievement}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.1 + i * 0.1 }}
-              className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-full border border-gray-200 dark:border-gray-600"
-            >
-              {achievement}
-            </motion.span>
-          ))}
-          {award.achievements.length > 3 && (
-            <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs rounded-full border border-gray-200 dark:border-gray-600">
-              +{award.achievements.length - 3} more
-            </span>
-          )}
-        </div>
-
         {/* View Images Button */}
-        {allImages.length > 0 && (
+        {hasImages && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-4 text-center"
+            className="flex justify-center"
           >
-            <button className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-sm font-medium transition-colors duration-200">
+            <button className="inline-flex items-center space-x-2 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-sm font-medium transition-colors duration-200">
               <ImageIcon className="w-4 h-4" />
-              <span>View {allImages.length} Image{allImages.length > 1 ? 's' : ''}</span>
+              <span>View Images</span>
             </button>
           </motion.div>
         )}
       </div>
+    </motion.div>
+  )
+}
 
-      {/* Hover effect */}
-      <motion.div
-        initial={false}
-        animate={{ 
-          opacity: isHovered ? 1 : 0,
-          scale: isHovered ? 1 : 0.8
-        }}
-        className={`absolute inset-0 bg-gradient-to-r ${award.gradient} opacity-10 rounded-3xl`}
-      />
+const AwardListCard = ({ award, index, onViewImages }) => {
+  const hasImages = award.allImages.length > 0
+  const mainImage = hasImages ? award.allImages[0] : null
+
+  const handleCardClick = () => {
+    if (hasImages) {
+      onViewImages(award, 0)
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -50 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 50 }}
+      transition={{ duration: 0.4, delay: index * 0.1 }}
+      whileHover={{ x: 5 }}
+      className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl cursor-pointer border border-amber-200/50 dark:border-amber-700/50 shadow-lg hover:shadow-xl transition-all duration-300"
+      onClick={handleCardClick}
+    >
+      <div className="flex items-center p-4">
+        {/* Image Thumbnail - Always show if available */}
+        {hasImages && mainImage && (
+          <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 mr-4 border border-amber-200/50">
+            <img
+              src={mainImage.url}
+              alt={award.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
+        {/* Icon */}
+        <div className={`w-12 h-12 bg-gradient-to-r ${award.gradient} rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 mr-4`}>
+          <award.icon className="w-6 h-6 text-white" />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white line-clamp-1">
+                {award.title}
+              </h3>
+              {parseInt(award.year) === new Date().getFullYear() && (
+                <span className="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded-full">
+                  NEW
+                </span>
+              )}
+            </div>
+            <span className={`px-3 py-1 bg-gradient-to-r ${award.gradient} text-white text-sm font-semibold rounded-full flex-shrink-0 ml-2`}>
+              {award.year}
+            </span>
+          </div>
+          
+          {award.organization && (
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-1">
+              {award.organization}
+            </p>
+          )}
+          
+          <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2">
+            {award.description}
+          </p>
+        </div>
+
+        {/* Arrow and Image Count */}
+        <div className="flex items-center space-x-2 ml-4">
+          {hasImages && (
+            <div className="flex items-center space-x-1 text-amber-600 dark:text-amber-400 text-sm">
+              <ImageIcon className="w-4 h-4" />
+              <span className="text-xs">{award.allImages.length}</span>
+            </div>
+          )}
+          <motion.div
+            initial={{ x: 0 }}
+            whileHover={{ x: 5 }}
+            className="text-amber-500"
+          >
+            <ArrowRight className="w-5 h-5" />
+          </motion.div>
+        </div>
+      </div>
     </motion.div>
   )
 }
@@ -587,17 +679,15 @@ const AwardCard = ({ award, index, onViewImages }) => {
 const ImageGalleryModal = ({ isOpen, onClose, award, selectedIndex, onNext, onPrev, onSelectImage }) => {
   if (!isOpen || !award) return null
 
-  const allImages = getAllImages(award)
+  const allImages = award.allImages
   const currentImage = allImages[selectedIndex]
 
-  // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose()
       if (e.key === 'ArrowRight') onNext()
       if (e.key === 'ArrowLeft') onPrev()
     }
-
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [onClose, onNext, onPrev])
@@ -609,7 +699,7 @@ const ImageGalleryModal = ({ isOpen, onClose, award, selectedIndex, onNext, onPr
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/90 backdrop-blur-lg z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/95 backdrop-blur-xl z-50 flex items-center justify-center p-4"
           onClick={onClose}
         >
           <motion.div
@@ -617,34 +707,29 @@ const ImageGalleryModal = ({ isOpen, onClose, award, selectedIndex, onNext, onPr
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
             transition={{ type: "spring", damping: 25 }}
-            className="relative bg-white dark:bg-gray-800 rounded-3xl max-w-6xl max-h-[90vh] w-full overflow-hidden"
+            className="relative bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/50 to-transparent p-6">
+            <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/80 to-transparent p-4">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-xl font-bold text-white">{award.title}</h3>
+                  <h3 className="text-lg font-bold text-white">{award.title}</h3>
                   <p className="text-gray-300 text-sm">
                     {selectedIndex + 1} of {allImages.length} images
-                    {currentImage.isMain && (
-                      <span className="ml-2 px-2 py-1 bg-green-500 text-white text-xs rounded-full">
-                        Main Image
-                      </span>
-                    )}
                   </p>
                 </div>
                 <button
                   onClick={onClose}
                   className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors duration-200"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            {/* Main Image */}
-            <div className="relative h-[70vh] flex items-center justify-center">
+            {/* Image Display */}
+            <div className="relative h-[60vh] flex items-center justify-center p-4">
               <motion.img
                 key={selectedIndex}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -655,7 +740,7 @@ const ImageGalleryModal = ({ isOpen, onClose, award, selectedIndex, onNext, onPr
                 alt={currentImage.title}
                 className="max-h-full max-w-full object-contain"
               />
-
+              
               {/* Navigation Arrows */}
               {allImages.length > 1 && (
                 <>
@@ -663,176 +748,47 @@ const ImageGalleryModal = ({ isOpen, onClose, award, selectedIndex, onNext, onPr
                     onClick={onPrev}
                     className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors duration-200"
                   >
-                    <ChevronLeft className="w-6 h-6" />
+                    <ChevronLeft className="w-5 h-5" />
                   </button>
                   <button
                     onClick={onNext}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors duration-200"
                   >
-                    <ChevronRight className="w-6 h-6" />
+                    <ChevronRight className="w-5 h-5" />
                   </button>
                 </>
               )}
             </div>
 
-            {/* Thumbnail Gallery */}
+            {/* Thumbnail Strip */}
             {allImages.length > 1 && (
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4">
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                 <div className="flex space-x-2 overflow-x-auto pb-2">
                   {allImages.map((image, index) => (
                     <button
                       key={index}
                       onClick={() => onSelectImage(index)}
-                      className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                      className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
                         index === selectedIndex 
-                          ? 'border-yellow-400 ring-2 ring-yellow-400' 
+                          ? 'border-amber-400 ring-2 ring-amber-400' 
                           : 'border-transparent hover:border-white'
                       }`}
                     >
                       <img
                         src={image.url}
-                        alt={image.title}
+                        alt=""
                         className="w-full h-full object-cover"
                       />
-                      {image.isMain && (
-                        <div className="absolute top-0 right-0 bg-green-500 text-white text-xs px-1 rounded-bl-lg">
-                          Main
-                        </div>
-                      )}
                     </button>
                   ))}
                 </div>
               </div>
             )}
-
-            {/* Image Title */}
-            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-4 text-center">
-              <p className="text-sm font-medium">{currentImage.title}</p>
-            </div>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
   )
-}
-
-const AchievementsSection = ({ awards }) => {
-  // Calculate stats from actual awards data
-  const totalAwards = awards.length
-  const currentYear = new Date().getFullYear()
-  const oldestAward = Math.min(...awards.map(a => parseInt(a.year) || currentYear))
-  const yearsOfService = currentYear - oldestAward + 1
-
-  // Generate achievements based on actual awards
-  const achievements = [
-    `Received ${totalAwards} prestigious awards and recognitions`,
-    `Continuous service and excellence spanning ${yearsOfService} years`,
-    'Multiple international and national level recognitions',
-    'Pioneered community development initiatives across the region',
-    'Leadership in social welfare and community service programs',
-    'Consistent excellence in performance and achievement'
-  ]
-
-  // Calculate stats
-  const stats = [
-    { number: `${yearsOfService}+`, label: 'Years of Service' },
-    { number: `${Math.round(totalAwards * 1)}+`, label: 'Projects Impacted' },
-    { number: `${Math.round(totalAwards * 1000)}+`, label: 'People Served' },
-    { number: `${totalAwards}+`, label: 'Awards Received' }
-  ]
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8 }}
-      className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-white/20 dark:border-gray-700/50"
-    >
-      <h3 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-8 flex items-center justify-center space-x-3">
-        <Sparkles className="w-8 h-8 text-yellow-500" />
-        <span>Key Achievements & Milestones</span>
-        <Sparkles className="w-8 h-8 text-yellow-500" />
-      </h3>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {achievements.map((achievement, index) => (
-          <motion.div
-            key={achievement}
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="flex items-start space-x-4 group"
-          >
-            <motion.div
-              whileHover={{ scale: 1.2, rotate: 180 }}
-              transition={{ duration: 0.3 }}
-              className="w-6 h-6 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-lg"
-            >
-              <div className="w-2 h-2 bg-white rounded-full" />
-            </motion.div>
-            <p className="text-gray-700 dark:text-gray-300 text-lg group-hover:translate-x-2 transition-transform duration-200">
-              {achievement}
-            </p>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8 pt-8 border-t border-gray-200 dark:border-gray-600"
-      >
-        {stats.map((stat, index) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.8 + index * 0.1 }}
-            className="text-center"
-          >
-            <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
-              {stat.number}
-            </div>
-            <div className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-              {stat.label}
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
-    </motion.div>
-  )
-}
-
-// Helper function to get all images for an award (main image first, then other images)
-const getAllImages = (award) => {
-  const images = []
-  
-  // Add main image first if it exists
-  if (award.mainImage) {
-    images.push({
-      url: award.mainImage,
-      title: `${award.title} - Main Image`,
-      isMain: true
-    })
-  }
-  
-  // Add other images
-  if (award.images && award.images.length > 0) {
-    award.images.forEach(img => {
-      // Don't add duplicate if main image is already in the images array
-      if (img.url !== award.mainImage) {
-        images.push({
-          url: img.url,
-          title: img.title,
-          isMain: false
-        })
-      }
-    })
-  }
-  
-  return images
 }
 
 export default Awards

@@ -1,16 +1,318 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { ArrowDown, Award, Users, Heart, Sparkles, Star, TrendingUp, MapPin, Calendar, Shield, Target } from 'lucide-react';
+import { ArrowDown, Award, Users, Heart, Sparkles, Star, TrendingUp, Shield, Target, Clock } from 'lucide-react';
 import axios from 'axios';
 
+// --- Utility Components ---
+const AnimatedText = ({ texts, currentText }) => {
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={currentText}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.5 }}
+        // Subtitle style updated
+        className="text-xl md:text-2xl font-serif font-light text-white italic bg-black/50 backdrop-blur-sm px-4 py-3 rounded-xl border border-amber-400/30 shadow-xl"
+      >
+        "{texts[currentText]}"
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+const StatCard = ({ stat, delay }) => {
+  const getIcon = (iconName) => {
+    const icons = {
+      'Award': Award,
+      'Users': Users,
+      'Heart': Heart,
+      'Star': Star,
+      'Shield': Shield,
+      'Clock': Clock
+    };
+    return icons[iconName] || Award;
+  };
+
+  const IconComponent = getIcon(stat.icon);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30, scale: 0.8 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay, duration: 0.6, type: "spring" }}
+      whileHover={{ 
+        y: -8,
+        scale: 1.05,
+        transition: { duration: 0.2 }
+      }}
+      // Card style updated to be luxurious/metallic
+      className="group relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-2xl p-4 md:p-5 border border-amber-300/50 dark:border-amber-700/50 shadow-xl hover:shadow-2xl hover:shadow-gold-500/20 transition-all duration-300 overflow-hidden"
+    >
+      {/* Gold Hover Shimmer Effect */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-gold-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+      />
+      
+      <div className="relative z-10 flex items-center space-x-3 md:space-x-4">
+        <motion.div
+          whileHover={{ rotate: 360, scale: 1.1 }}
+          transition={{ duration: 0.6 }}
+          // Icon background updated to Gold gradient
+          className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 group-hover:shadow-amber-500/50 transition-all duration-300"
+        >
+          <IconComponent className="w-6 h-6 md:w-7 md:h-7 text-white" />
+        </motion.div>
+        
+        <div>
+          <motion.div 
+            className="text-2xl md:text-3xl font-black text-gray-800 dark:text-white mb-1"
+            whileHover={{ scale: 1.05 }}
+          >
+            {stat.number}
+          </motion.div>
+          <div className="text-gray-600 dark:text-gray-400 font-medium text-xs md:text-sm">{stat.text}</div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const FloatingElement = ({ icon, position, delay, color }) => {
+  const positions = {
+    top: { top: '-20%', left: '50%', x: '-50%' },
+    right: { top: '50%', right: '-20%', y: '-50%' },
+    bottom: { bottom: '-20%', left: '50%', x: '-50%' },
+    left: { top: '50%', left: '-20%', y: '-50%' }
+  };
+  const pos = positions[position];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0, ...pos }}
+      animate={{ 
+        opacity: 1, 
+        scale: 1,
+        y: position === 'top' || position === 'bottom' ? [0, -10, 0] : 0,
+        x: position === 'left' || position === 'right' ? [0, -10, 0] : 0
+      }}
+      transition={{ 
+        delay,
+        duration: 3,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }}
+      // Floating elements updated to Gold/Maroon theme
+      className={`absolute w-12 h-12 md:w-14 md:h-14 bg-gradient-to-r ${color} rounded-2xl flex items-center justify-center shadow-2xl border-2 border-white/80 dark:border-gray-800/80`}
+      style={pos}
+    >
+      <div className="text-white">
+        {icon}
+      </div>
+    </motion.div>
+  );
+};
+
+// --- Profile Image Components ---
+// Desktop Profile Image Component with 3D Rotation Animation
+const DesktopProfileImage = ({ profileImage }) => {
+  return (
+    <div className="relative perspective-1000">
+      {/* Background Glow - Updated to Gold/Maroon */}
+      <motion.div
+        animate={{
+          rotate: [0, 360],
+          scale: [1, 1.1, 1],
+        }}
+        transition={{
+          duration: 20,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+        className="absolute -inset-8 bg-gradient-to-r from-amber-400 via-rose-500 to-maroon-700 rounded-full blur-3xl opacity-30"
+      />
+      
+      {/* Profile Image Container - Applies 3D Rotation */}
+      <motion.div
+        whileHover={{ scale: 1.02, rotate: 1 }}
+        transition={{ duration: 0.3 }}
+        // Applying 3D rotation keyframes
+        animate="rotate-3d" 
+        className="relative transform-style-preserve-3d"
+      >
+        <motion.img
+          src={profileImage}
+          alt="Shri Puttagunta Venkata Sateesh Kumar"
+          // Image size adjusted for larger screen impact
+          className="w-80 h-80 lg:w-96 lg:h-96 xl:w-[480px] xl:h-[480px] rounded-3xl object-cover border-8 border-white/80 dark:border-gray-800/80 shadow-2xl backface-hidden"
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ delay: 0.8, type: "spring", stiffness: 100 }}
+        />
+        
+        {/* Floating Elements - Updated colors */}
+        <FloatingElement
+          icon={<Award className="w-6 h-6" />}
+          position="top"
+          delay={1}
+          color="from-amber-400 to-yellow-600"
+        />
+        <FloatingElement
+          icon={<Users className="w-6 h-6" />}
+          position="right"
+          delay={1.2}
+          color="from-rose-500 to-maroon-700"
+        />
+        <FloatingElement
+          icon={<Heart className="w-6 h-6" />}
+          position="bottom"
+          delay={1.4}
+          color="from-white to-gray-400"
+        />
+        <FloatingElement
+          icon={<Target className="w-6 h-6" />}
+          position="left"
+          delay={1.6}
+          color="from-stone-500 to-gray-700"
+        />
+
+        {/* Verification Badge - Updated to Gold/Maroon */}
+        <motion.div
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ delay: 1.8, type: "spring" }}
+          className="absolute -top-4 -right-4 bg-gradient-to-r from-amber-500 to-gold-500 rounded-full p-3 shadow-2xl border-4 border-white dark:border-gray-900"
+        >
+          <Sparkles className="w-8 h-8 text-white" />
+        </motion.div>
+
+        {/* Experience Badge - Updated styling */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 2 }}
+          className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md px-6 py-3 rounded-2xl shadow-2xl border border-amber-300 dark:border-amber-700"
+        >
+          <div className="flex items-center space-x-2">
+            <TrendingUp className="w-5 h-5 text-amber-500" />
+            <span className="font-bold text-gray-800 dark:text-white">20+ Years</span>
+            <span className="text-gray-600 dark:text-gray-400">Experience</span>
+          </div>
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+};
+
+// Mobile Profile Image Component (simpler, no 3D rotation)
+const MobileProfileImage = ({ profileImage }) => {
+  return (
+    <div className="relative">
+      {/* Background Glow - Updated to Gold/Maroon */}
+      <motion.div
+        animate={{
+          rotate: [0, 360],
+          scale: [1, 1.1, 1],
+        }}
+        transition={{
+          duration: 20,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+        className="absolute -inset-6 bg-gradient-to-r from-amber-400 via-rose-500 to-maroon-700 rounded-full blur-2xl opacity-30"
+      />
+      
+      {/* Profile Image */}
+      <motion.div
+        whileHover={{ scale: 1.02, rotate: 1 }}
+        transition={{ duration: 0.3 }}
+        className="relative"
+      >
+        <motion.img
+          src={profileImage}
+          alt="Shri Puttagunta Venkata Sateesh Kumar"
+          className="w-64 h-64 rounded-3xl object-cover border-6 border-white/80 dark:border-gray-800/80 shadow-2xl"
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ delay: 0.8, type: "spring", stiffness: 100 }}
+        />
+        
+        {/* Verification Badge - Updated to Gold/Maroon */}
+        <motion.div
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ delay: 1.8, type: "spring" }}
+          className="absolute -top-3 -right-3 bg-gradient-to-r from-amber-500 to-gold-500 rounded-full p-2 shadow-2xl border-3 border-white dark:border-gray-900"
+        >
+          <Sparkles className="w-6 h-6 text-white" />
+        </motion.div>
+
+        {/* Experience Badge - Updated styling */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 2 }}
+          className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-2xl border border-amber-300 dark:border-amber-700"
+        >
+          <div className="flex items-center space-x-2">
+            <TrendingUp className="w-4 h-4 text-amber-500" />
+            <span className="font-bold text-gray-800 dark:text-white text-sm">20+ Years</span>
+            <span className="text-gray-600 dark:text-gray-400 text-sm">Experience</span>
+          </div>
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+};
+
+
+// --- Main Hero Component ---
 const Hero = () => {
   const { t } = useTranslation();
   const [heroData, setHeroData] = useState(null);
   const [currentText, setCurrentText] = useState(0);
   const [profileImage, setProfileImage] = useState('');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  // ... (fetchHeroData and fetchProfileImage functions remain the same) ...
+  // NOTE: The implementation of fetchHeroData and fetchProfileImage is presumed correct
+  // and is kept external for brevity, but the logic is included in the file for completeness.
+  const fetchHeroData = async () => {
+    try {
+      const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/hero');
+      setHeroData(response.data);
+    } catch (error) {
+      // console.error('Error fetching hero data:', error);
+      setHeroData({
+        title: "Puttagunta Venkata Sateesh Kumar",
+        subtitle: "Service Is My Passion",
+        image: "https://scontent.fhyd14-4.fna.fbcdn.net/v/t39.30808-6/308503258_457664199720909_8604279637100674190_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=d1afvFy1qIkQ7kNvwHjsxul&_nc_oc=Adl-z75kxq6jSYH0LlOybcgBWTAXHbTpzQG3fJxfkuCCygj4w8sw3hVGq-FLE-tQYX3nOPvJmq5XpY9VYS9apd-N&_nc_zt=23&_nc_ht=scontent.fhyd14-4.fna&_nc_gid=0bUTIjMOeiahuYdr7GqFSA&oh=00_AfZX1K-3vjOYWcFs2PVhE6is38KRFTukzagJ22zsEEOtnA&oe=68E410AD",
+        stats: [
+          { number: '20+', text: 'Years of Service', icon: 'Clock' },
+          { number: '100+', text: 'Community Camps', icon: 'Users' },
+          { number: '5000+', text: 'Lives Impacted', icon: 'Heart' }
+        ]
+      });
+    }
+  };
   
+  const fetchProfileImage = async () => {
+    try {
+      const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/gallery?category=profile&limit=1');
+      if (response.data.length > 0) {
+        setProfileImage(response.data[0].image);
+      } else {
+        setProfileImage('https://scontent.fhyd14-4.fna.fbcdn.net/v/t39.30808-6/308503258_457664199720909_8604279637100674190_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=d1afvFy1qIkQ7kNvwHjsxul&_nc_oc=Adl-z75kxq6jSYH0LlOybcgBWTAXHbTpzQG3fJxfkuCCygj4w8sw3hVGq-FLE-tQYX3nOPvJmq5XpY9VYS9apd-N&_nc_zt=23&_nc_ht=scontent.fhyd14-4.fna&_nc_gid=0bUTIjMOeiahuYdr7GqFSA&oh=00_AfZX1K-3vjOYWcFs2PVhE6is38KRFTukzagJ22zsEEOtnA&oe=68E410AD');
+      }
+    } catch (error) {
+      // console.error('Error fetching profile image:', error);
+      // Fallback
+      setProfileImage('https://scontent.fhyd14-4.fna.fbcdn.net/v/t39.30808-6/308503258_457664199720909_8604279637100674190_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=d1afvFy1qIkQ7kNvwHjsxul&_nc_oc=Adl-z75kxq6jSYH0LlOybcgBWTAXHbTpzQG3fJxfkuCCygj4w8sw3hVGq-FLE-tQYX3nOPvJmq5XpY9VYS9apd-N&_nc_zt=23&_nc_ht=scontent.fhyd14-4.fna&_nc_gid=0bUTIjMOeiahuYdr7GqFSA&oh=00_AfZX1K-3vjOYWcFs2PVhE6is38KRFTukzagJ22zsEEOtnA&oe=68E410AD');
+    }
+  };
+
   useEffect(() => {
     fetchHeroData();
     fetchProfileImage();
@@ -23,40 +325,10 @@ const Hero = () => {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  const fetchHeroData = async () => {
-    try {
-      const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/hero');
-      setHeroData(response.data);
-    } catch (error) {
-      console.error('Error fetching hero data:', error);
-      setHeroData({
-        title: "Puttagunta Venkata Sateesh Kumar",
-        subtitle: "Service Is My Passion",
-        image: "https://scontent.fhyd14-4.fna.fbcdn.net/v/t39.30808-6/308503258_457664199720909_8604279637100674190_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=d1afvFy1qIkQ7kNvwHjsxul&_nc_oc=Adl-z75kxq6jSYH0LlOybcgBWTAXHbTpzQG3fJxfkuCCygj4w8sw3hVGq-FLE-tQYX3nOPvJmq5XpY9VYS9apd-N&_nc_zt=23&_nc_ht=scontent.fhyd14-4.fna&_nc_gid=0bUTIjMOeiahuYdr7GqFSA&oh=00_AfZX1K-3vjOYWcFs2PVhE6is38KRFTukzagJ22zsEEOtnA&oe=68E410AD",
-        stats: [
-          { number: '20+', text: 'Years of Service', icon: 'Award' },
-          { number: '100+', text: 'Community Camps', icon: 'Users' },
-          { number: '5000+', text: 'Lives Impacted', icon: 'Heart' }
-        ]
-      });
-    }
-  };
-
-  const fetchProfileImage = async () => {
-    try {
-      const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/gallery?category=profile&limit=1');
-      if (response.data.length > 0) {
-        setProfileImage(response.data[0].image);
-      } else {
-        setProfileImage('https://scontent.fhyd14-4.fna.fbcdn.net/v/t39.30808-6/308503258_457664199720909_8604279637100674190_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=d1afvFy1qIkQ7kNvwHjsxul&_nc_oc=Adl-z75kxq6jSYH0LlOybcgBWTAXHbTpzQG3fJxfkuCCygj4w8sw3hVGq-FLE-tQYX3nOPvJmq5XpY9VYS9apd-N&_nc_zt=23&_nc_ht=scontent.fhyd14-4.fna&_nc_gid=0bUTIjMOeiahuYdr7GqFSA&oh=00_AfZX1K-3vjOYWcFs2PVhE6is38KRFTukzagJ22zsEEOtnA&oe=68E410AD');
-      }
-    } catch (error) {
-      console.error('Error fetching profile image:', error);
-    }
-  };
-
   const texts = [
     heroData?.subtitle || "Service Is My Passion",
+    "Leadership is service, not status.",
+    "True entrepreneurs lead by serving others."
   ];
 
   useEffect(() => {
@@ -72,11 +344,11 @@ const Hero = () => {
 
   if (!heroData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-cyan-50 to-blue-50 dark:from-gray-900 dark:via-emerald-900 dark:to-blue-900 pt-20">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-stone-100 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black pt-20">
         <motion.div
           animate={{ rotate: 360, scale: [1, 1.2, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="w-20 h-20 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center"
+          className="w-20 h-20 bg-gradient-to-r from-amber-500 to-gold-500 rounded-full flex items-center justify-center"
         >
           <Sparkles className="w-10 h-10 text-white" />
         </motion.div>
@@ -85,7 +357,7 @@ const Hero = () => {
   }
 
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-50 via-cyan-50 to-blue-50 dark:from-gray-900 dark:via-emerald-900 dark:to-blue-900 pt-20 lg:pt-0">
+    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-stone-50 via-stone-100 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black pt-20 lg:pt-0">
       
       {/* Background Image with Overlay */}
       <div 
@@ -95,16 +367,17 @@ const Hero = () => {
           transform: `translateX(${parallaxX}px) translateY(${parallaxY}px)`
         }}
       >
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"></div>
+        {/* Darker, richer overlay for high-contrast text */}
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px]"></div>
       </div>
 
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Floating Particles */}
+        {/* Floating Particles - Updated to Gold/White */}
         {[...Array(15)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-2 h-2 bg-emerald-400/30 dark:bg-cyan-400/20 rounded-full"
+            className="absolute w-2 h-2 bg-amber-400/30 dark:bg-white/20 rounded-full"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
@@ -121,7 +394,7 @@ const Hero = () => {
           />
         ))}
         
-        {/* Gradient Orbs */}
+        {/* Gradient Orbs - Updated to Gold/Maroon/White */}
         <motion.div
           animate={{
             x: [0, 100, 0],
@@ -133,7 +406,7 @@ const Hero = () => {
             repeat: Infinity,
             ease: "easeInOut",
           }}
-          className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-emerald-400/20 to-cyan-400/20 rounded-full blur-3xl"
+          className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-amber-400/20 to-maroon-700/20 rounded-full blur-3xl"
         />
         <motion.div
           animate={{
@@ -146,14 +419,14 @@ const Hero = () => {
             repeat: Infinity,
             ease: "easeInOut",
           }}
-          className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"
+          className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-white/20 to-gray-500/20 rounded-full blur-3xl"
         />
       </div>
 
       {/* Main Content */}
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-          
+         
           {/* Mobile: Profile Image First */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -169,25 +442,24 @@ const Hero = () => {
             initial={{ opacity: 0, x: -100 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1.2, ease: "easeOut" }}
-            className="space-y-8 text-gray-800 dark:text-white order-2 lg:order-1"
+            className="space-y-8 text-white order-2 lg:order-1"
           >
             
-
-            {/* Main Title */}
+            {/* Main Title - Updated to Serif font and Gold/Maroon colors */}
             <div className="space-y-4">
               <motion.h1
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.8 }}
-                className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight"
+                className="text-5xl md:text-7xl lg:text-8xl font-black font-serif leading-none"
               >
-                
-                
-                <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 dark:from-amber-300 dark:via-orange-300 dark:to-red-300 bg-clip-text text-transparent">
+                {/* Gold Gradient Title Part 1 */}
+                <span className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 bg-clip-text text-stroke-gold text-transparent">
                   Puttagunta
                 </span>
                 <br />
-                <span className="text-2xl md:text-4xl lg:text-5xl bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                {/* Maroon Gradient Title Part 2 */}
+                <span className="text-3xl md:text-5xl lg:text-6xl font-serif bg-gradient-to-r from-rose-600 to-amber-500 bg-clip-text text-transparent">
                   Venkata Sateesh Kumar
                 </span>
               </motion.h1>
@@ -219,17 +491,19 @@ const Hero = () => {
               ))}
             </motion.div>
 
-            {/* CTA Buttons */}
+            {/* CTA Buttons - Updated to Gold/Maroon theme */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.5 }}
               className="flex flex-wrap gap-4"
             >
+              
               <motion.button
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-3 md:px-8 md:py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-2xl font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-300 flex items-center space-x-2"
+                // Primary CTA: Gold Gradient
+                className="px-6 py-3 md:px-8 md:py-4 bg-gradient-to-r from-amber-500 to-yellow-600 text-stone-900 rounded-xl font-bold shadow-lg shadow-amber-500/50 hover:shadow-xl hover:shadow-amber-500/60 transition-all duration-300 flex items-center space-x-2"
                 onClick={() => (window.location.href = '#gallery')}
               >
                 <Sparkles className="w-5 h-5" />
@@ -239,7 +513,8 @@ const Hero = () => {
               <motion.button
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-3 md:px-8 md:py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                // Secondary CTA: High-contrast Maroon/White
+                className="px-6 py-3 md:px-8 md:py-4 bg-maroon-700/80 dark:bg-rose-700/80 backdrop-blur-md border border-white/20 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:shadow-maroon-700/50 transition-all duration-300"
                 onClick={() => (window.location.href = '#awards')}
               >
                 View Achievements
@@ -258,7 +533,7 @@ const Hero = () => {
           </motion.div>
         </div>
 
-        {/* Scroll Indicator */}
+        {/* Scroll Indicator - Updated to Gold/White */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -275,265 +550,13 @@ const Hero = () => {
               <motion.div
                 animate={{ y: [0, 12, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="w-1 h-3 bg-white/80 rounded-full mt-2"
+                className="w-1 h-3 bg-amber-400/80 rounded-full mt-2"
               />
             </div>
           </motion.div>
         </motion.div>
       </div>
     </section>
-  );
-};
-
-// Mobile Profile Image Component
-const MobileProfileImage = ({ profileImage }) => {
-  return (
-    <div className="relative">
-      {/* Background Glow */}
-      <motion.div
-        animate={{
-          rotate: [0, 360],
-          scale: [1, 1.1, 1],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-        className="absolute -inset-6 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 rounded-full blur-2xl opacity-30"
-      />
-      
-      {/* Profile Image */}
-      <motion.div
-        whileHover={{ scale: 1.02, rotate: 1 }}
-        transition={{ duration: 0.3 }}
-        className="relative"
-      >
-        <motion.img
-          src={profileImage}
-          alt="Shri Puttagunta Venkata Sateesh Kumar"
-          className="w-64 h-64 rounded-3xl object-cover border-6 border-white/80 dark:border-gray-800/80 shadow-2xl"
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ delay: 0.8, type: "spring", stiffness: 100 }}
-        />
-        
-        {/* Verification Badge */}
-        <motion.div
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ delay: 1.8, type: "spring" }}
-          className="absolute -top-3 -right-3 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full p-2 shadow-2xl border-3 border-white dark:border-gray-900"
-        >
-          <Sparkles className="w-6 h-6 text-white" />
-        </motion.div>
-
-        {/* Experience Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 2 }}
-          className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700"
-        >
-          <div className="flex items-center space-x-2">
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
-            <span className="font-bold text-gray-800 dark:text-white text-sm">20+ Years</span>
-            <span className="text-gray-600 dark:text-gray-400 text-sm">Experience</span>
-          </div>
-        </motion.div>
-      </motion.div>
-    </div>
-  );
-};
-
-// Desktop Profile Image Component
-const DesktopProfileImage = ({ profileImage }) => {
-  return (
-    <div className="relative">
-      {/* Background Glow */}
-      <motion.div
-        animate={{
-          rotate: [0, 360],
-          scale: [1, 1.1, 1],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-        className="absolute -inset-8 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 rounded-full blur-3xl opacity-30"
-      />
-      
-      {/* Profile Image */}
-      <motion.div
-        whileHover={{ scale: 1.02, rotate: 1 }}
-        transition={{ duration: 0.3 }}
-        className="relative"
-      >
-        <motion.img
-          src={profileImage}
-          alt="Shri Puttagunta Venkata Sateesh Kumar"
-          className="w-80 h-80 lg:w-96 lg:h-96 xl:w-[480px] xl:h-[480px] rounded-3xl object-cover border-8 border-white/80 dark:border-gray-800/80 shadow-2xl"
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ delay: 0.8, type: "spring", stiffness: 100 }}
-        />
-        
-        {/* Floating Elements */}
-        <FloatingElement
-          icon={<Award className="w-6 h-6" />}
-          position="top"
-          delay={1}
-          color="from-amber-400 to-orange-400"
-        />
-        <FloatingElement
-          icon={<Users className="w-6 h-6" />}
-          position="right"
-          delay={1.2}
-          color="from-emerald-400 to-cyan-400"
-        />
-        <FloatingElement
-          icon={<Heart className="w-6 h-6" />}
-          position="bottom"
-          delay={1.4}
-          color="from-rose-400 to-pink-400"
-        />
-        <FloatingElement
-          icon={<Target className="w-6 h-6" />}
-          position="left"
-          delay={1.6}
-          color="from-purple-400 to-indigo-400"
-        />
-
-        {/* Verification Badge */}
-        <motion.div
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ delay: 1.8, type: "spring" }}
-          className="absolute -top-4 -right-4 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full p-3 shadow-2xl border-4 border-white dark:border-gray-900"
-        >
-          <Sparkles className="w-8 h-8 text-white" />
-        </motion.div>
-
-        {/* Experience Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 2 }}
-          className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md px-6 py-3 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700"
-        >
-          <div className="flex items-center space-x-2">
-            <TrendingUp className="w-5 h-5 text-emerald-500" />
-            <span className="font-bold text-gray-800 dark:text-white">20+ Years</span>
-            <span className="text-gray-600 dark:text-gray-400">Experience</span>
-          </div>
-        </motion.div>
-      </motion.div>
-    </div>
-  );
-};
-
-const AnimatedText = ({ texts, currentText }) => {
-  return (
-    <motion.div
-      key={currentText}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.5 }}
-      className="text-xl md:text-2xl font-light text-white italic bg-black/30 backdrop-blur-sm px-4 py-3 rounded-2xl border border-white/20"
-    >
-      "{texts[currentText]}"
-    </motion.div>
-  );
-};
-
-const StatCard = ({ stat, delay }) => {
-  const getIcon = (iconName) => {
-    const icons = {
-      'Award': Award,
-      'Users': Users,
-      'Heart': Heart,
-      'Star': Star,
-      'Shield': Shield
-    };
-    return icons[iconName] || Award;
-  };
-
-  const IconComponent = getIcon(stat.icon);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30, scale: 0.8 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay, duration: 0.6, type: "spring" }}
-      whileHover={{ 
-        y: -8,
-        scale: 1.05,
-        transition: { duration: 0.2 }
-      }}
-      className="group relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-4 md:p-5 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-2xl transition-all duration-300"
-    >
-      {/* Hover Effect Background */}
-      <motion.div
-        className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-      />
-      
-      <div className="relative z-10 flex items-center space-x-3 md:space-x-4">
-        <motion.div
-          whileHover={{ rotate: 360, scale: 1.1 }}
-          transition={{ duration: 0.6 }}
-          className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0 group-hover:shadow-emerald-500/25 transition-all duration-300"
-        >
-          <IconComponent className="w-6 h-6 md:w-7 md:h-7 text-white" />
-        </motion.div>
-        
-        <div>
-          <motion.div 
-            className="text-xl md:text-2xl font-black text-gray-800 dark:text-white mb-1"
-            whileHover={{ scale: 1.1 }}
-          >
-            {stat.number}
-          </motion.div>
-          <div className="text-gray-600 dark:text-gray-400 font-medium text-xs md:text-sm">{stat.text}</div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-const FloatingElement = ({ icon, position, delay, color }) => {
-  const positions = {
-    top: { top: '-20%', left: '50%', x: '-50%' },
-    right: { top: '50%', right: '-20%', y: '-50%' },
-    bottom: { bottom: '-20%', left: '50%', x: '-50%' },
-    left: { top: '50%', left: '-20%', y: '-50%' }
-  };
-
-  const pos = positions[position];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0, ...pos }}
-      animate={{ 
-        opacity: 1, 
-        scale: 1,
-        y: position === 'top' || position === 'bottom' ? [0, -10, 0] : 0,
-        x: position === 'left' || position === 'right' ? [0, -10, 0] : 0
-      }}
-      transition={{ 
-        delay,
-        duration: 3,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }}
-      className={`absolute w-12 h-12 md:w-14 md:h-14 bg-gradient-to-r ${color} rounded-2xl flex items-center justify-center shadow-2xl border-2 border-white/80 dark:border-gray-800/80`}
-      style={pos}
-    >
-      <div className="text-white">
-        {icon}
-      </div>
-    </motion.div>
   );
 };
 

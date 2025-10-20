@@ -1,41 +1,66 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Droplets, BookOpen, Heart, Users, ArrowRight, Sparkles, X, 
-  ChevronLeft, ChevronRight, Target, HeartHandshake, Globe, Shield,
-  Search, Calendar, Filter, ArrowDown, ArrowUp, Clock
+  ChevronLeft, ChevronRight, Play, Pause, Image as ImageIcon, 
+  Award, Settings, Users, Star, Sparkles, Clock, Heart, Target,
+  Search, Filter, ArrowDown, ArrowUp, X, BookOpen, Droplets,
+  HeartHandshake, Globe, Shield, Calendar, Book, ArrowRight,
+  Grid, List, Eye
 } from 'lucide-react';
 import axios from 'axios';
 
 const Services = () => {
   const [services, setServices] = useState([]);
   const [filteredServices, setFilteredServices] = useState([]);
-  const [activeService, setActiveService] = useState(0);
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [displayedServices, setDisplayedServices] = useState([]);
+  const [selectedService, setSelectedService] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [hoveredCard, setHoveredCard] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('date');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [viewMode, setViewMode] = useState('grid');
   const [showAll, setShowAll] = useState(false);
-  const [sortBy, setSortBy] = useState('date'); // Default to date sorting
-  const [sortOrder, setSortOrder] = useState('desc'); // Default to descending (newest first)
+  const [itemsToShow, setItemsToShow] = useState(8);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     fetchServices();
+    
+    const handleMouseMove = (e) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
+
+  // Parallax effect for background
+  const parallaxX = mousePosition.x * 0.01;
+  const parallaxY = mousePosition.y * 0.01;
 
   useEffect(() => {
     filterAndSortServices();
   }, [services, searchTerm, sortBy, sortOrder]);
 
+  useEffect(() => {
+    // Update displayed services based on showAll state
+    if (showAll) {
+      setDisplayedServices(filteredServices);
+    } else {
+      setDisplayedServices(filteredServices.slice(0, itemsToShow));
+    }
+  }, [filteredServices, showAll, itemsToShow]);
+
   const fetchServices = async () => {
     try {
+      setLoading(true);
       const response = await axios.get('https://sateesh-kumar-portfolio.onrender.com/api/services');
-      // Sort services by date (newest first) immediately after fetching
       const sortedServices = response.data.sort((a, b) => {
         const dateA = new Date(a.createdAt || a.updatedAt || new Date());
         const dateB = new Date(b.createdAt || b.updatedAt || new Date());
-        return dateB - dateA; // Newest first
+        return dateB - dateA;
       });
       setServices(sortedServices);
       setLoading(false);
@@ -54,7 +79,6 @@ const Services = () => {
       )
     );
 
-    // Sort services based on current sort criteria
     filtered.sort((a, b) => {
       let aValue, bValue;
       
@@ -76,10 +100,7 @@ const Services = () => {
     });
 
     setFilteredServices(filtered);
-    // Reset active service to first one when filtering/sorting changes
-    if (filtered.length > 0) {
-      setActiveService(0);
-    }
+    setShowAll(false); // Reset showAll when filtering
   };
 
   const getIcon = (iconName) => {
@@ -97,17 +118,17 @@ const Services = () => {
   };
 
   const nextImage = () => {
-    if (selectedImage && filteredServices[activeService]?.images) {
+    if (selectedService?.images) {
       setCurrentImageIndex((prev) => 
-        (prev + 1) % filteredServices[activeService].images.length
+        (prev + 1) % selectedService.images.length
       );
     }
   };
 
   const prevImage = () => {
-    if (selectedImage && filteredServices[activeService]?.images) {
+    if (selectedService?.images) {
       setCurrentImageIndex((prev) => 
-        (prev - 1 + filteredServices[activeService].images.length) % filteredServices[activeService].images.length
+        (prev - 1 + selectedService.images.length) % selectedService.images.length
       );
     }
   };
@@ -117,7 +138,6 @@ const Services = () => {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortBy(field);
-      // Set default order based on field
       setSortOrder(field === 'date' ? 'desc' : 'asc');
     }
   };
@@ -128,59 +148,59 @@ const Services = () => {
     const diffInMs = now - date;
     const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
     
-    if (diffInDays === 0) {
-      return 'Today';
-    } else if (diffInDays === 1) {
-      return 'Yesterday';
-    } else if (diffInDays < 7) {
-      return `${diffInDays} days ago`;
-    } else if (diffInDays < 30) {
+    if (diffInDays === 0) return 'Today';
+    if (diffInDays === 1) return 'Yesterday';
+    if (diffInDays < 7) return `${diffInDays} days ago`;
+    if (diffInDays < 30) {
       const weeks = Math.floor(diffInDays / 7);
       return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
-    } else {
-      const months = Math.floor(diffInDays / 30);
-      return `${months} month${months > 1 ? 's' : ''} ago`;
     }
+    const months = Math.floor(diffInDays / 30);
+    return `${months} month${months > 1 ? 's' : ''} ago`;
   };
 
-  const displayedServices = showAll ? filteredServices : filteredServices.slice(0, 4);
+  const toggleShowAll = () => {
+    setShowAll(!showAll);
+  };
 
-  // Floating animation variants
-  const floatingAnimation = {
-    animate: {
-      y: [0, -10, 0],
-      transition: {
-        duration: 4,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    }
+  const loadMore = () => {
+    setItemsToShow(prev => prev + 8);
   };
 
   if (loading) {
     return (
-      <section id="services" className="min-h-screen py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 flex items-center justify-center">
-        <div className="text-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-20 h-20 border-4 border-blue-500 dark:border-blue-400 border-t-transparent rounded-full mx-auto mb-4"
-          />
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-gray-600 dark:text-gray-300 text-lg"
-          >
-            Loading Services...
-          </motion.p>
+      <section id="services" className="relative py-16 bg-gradient-to-br from-stone-50 via-stone-100 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black overflow-hidden min-h-[60vh] flex items-center justify-center">
+        {/* Background with parallax */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
+          style={{ 
+            transform: `translateX(${parallaxX}px) translateY(${parallaxY}px)`
+          }}
+        >
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"></div>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative z-10 text-center"
+        >
+          <motion.div
+            animate={{ rotate: 360, scale: [1, 1.2, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="w-20 h-20 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4"
+          >
+            <Sparkles className="w-10 h-10 text-white" />
+          </motion.div>
+          <p className="text-gray-600 dark:text-gray-300 font-serif text-lg">Loading services...</p>
+        </motion.div>
       </section>
     );
   }
 
   if (services.length === 0) {
     return (
-      <section id="services" className="min-h-screen py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 flex items-center justify-center">
+      <section id="services" className="relative py-16 bg-gradient-to-br from-stone-50 via-stone-100 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black overflow-hidden min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
           <HeartHandshake className="w-24 h-24 text-gray-400 dark:text-gray-600 mx-auto mb-6" />
           <h3 className="text-2xl font-bold text-gray-600 dark:text-gray-400 mb-4">
@@ -195,25 +215,68 @@ const Services = () => {
   }
 
   return (
-    <section id="services" className="min-h-screen py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 overflow-hidden">
+    <section id="services" className="relative py-16 bg-gradient-to-br from-stone-50 via-stone-100 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black overflow-hidden">
+      
+      {/* Background with parallax */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
+        style={{ 
+          transform: `translateX(${parallaxX}px) translateY(${parallaxY}px)`
+        }}
+      >
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"></div>
+      </div>
+
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
+        {/* Floating Particles - Gold/White Theme */}
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 bg-amber-400/30 dark:bg-white/20 rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              y: [0, -40, 0],
+              opacity: [0, 1, 0],
+              scale: [1, 1.5, 1],
+            }}
+            transition={{
+              duration: 4 + Math.random() * 3,
+              repeat: Infinity,
+              delay: Math.random() * 2,
+            }}
+          />
+        ))}
+        
+        {/* Gradient Orbs - Gold/Maroon Theme */}
         <motion.div
-          variants={floatingAnimation}
-          animate="animate"
-          className="absolute top-20 left-10 w-72 h-72 bg-blue-200 dark:bg-blue-800 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20"
+          animate={{
+            x: [0, 100, 0],
+            y: [0, 50, 0],
+            scale: [1, 1.3, 1],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-amber-400/15 to-maroon-700/15 rounded-full blur-3xl"
         />
         <motion.div
-          variants={floatingAnimation}
-          animate="animate"
-          transition={{ delay: 1 }}
-          className="absolute bottom-20 right-10 w-72 h-72 bg-indigo-200 dark:bg-indigo-800 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20"
-        />
-        <motion.div
-          variants={floatingAnimation}
-          animate="animate"
-          transition={{ delay: 2 }}
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-200 dark:bg-purple-800 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-10"
+          animate={{
+            x: [0, -100, 0],
+            y: [0, -50, 0],
+            scale: [1, 1.4, 1],
+          }}
+          transition={{
+            duration: 30,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-white/15 to-gray-500/15 rounded-full blur-3xl"
         />
       </div>
 
@@ -222,51 +285,34 @@ const Services = () => {
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-center mb-12"
         >
-          <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            whileInView={{ scale: 1, rotate: 0 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
-            className="inline-flex items-center justify-center mb-6"
-          >
-            <div className="relative">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                className="w-24 h-24 border-2 border-blue-500 dark:border-blue-400 rounded-full absolute inset-0"
-              />
-              <HeartHandshake className="w-12 h-12 text-blue-600 dark:text-blue-400 relative z-10" />
-            </div>
-          </motion.div>
-          
           <motion.h2
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-4xl md:text-6xl font-bold mb-6"
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="text-4xl md:text-5xl lg:text-6xl font-black font-serif text-gray-800 dark:text-white mb-4"
           >
-            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
-              Service is My Passion
+            <span className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
+              Our Services
             </span>
           </motion.h2>
-          
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8"
+            transition={{ delay: 0.4 }}
+            className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto font-serif italic bg-black/30 backdrop-blur-sm px-6 py-3 rounded-xl border border-amber-400/30"
           >
-            Dedicated to making a difference through compassionate service and community development
+            "Dedicated to making a difference through compassionate service and community development"
           </motion.p>
 
           {/* Search and Filter Bar */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="max-w-2xl mx-auto"
+            transition={{ delay: 0.6 }}
+            className="max-w-4xl mx-auto mt-8"
           >
             <div className="flex flex-col md:flex-row gap-4 items-center justify-center">
               {/* Search Input */}
@@ -274,19 +320,49 @@ const Services = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="text"
-                  placeholder="Search services by name, description, or features..."
+                  placeholder="Search services..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  className="w-full pl-10 pr-4 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-amber-200/50 dark:border-amber-700/30 rounded-2xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-300"
                 />
                 {searchTerm && (
                   <button
                     onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 )}
+              </div>
+
+              {/* View Mode Toggle */}
+              <div className="flex gap-2">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setViewMode('grid')}
+                  className={`flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 ${
+                    viewMode === 'grid' 
+                      ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-lg shadow-amber-500/25' 
+                      : 'bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 border border-amber-200/50 dark:border-amber-700/30'
+                  }`}
+                >
+                  <Grid className="w-4 h-4" />
+                  <span>Grid</span>
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setViewMode('list')}
+                  className={`flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 ${
+                    viewMode === 'list' 
+                      ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-lg shadow-amber-500/25' 
+                      : 'bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 border border-amber-200/50 dark:border-amber-700/30'
+                  }`}
+                >
+                  <List className="w-4 h-4" />
+                  <span>List</span>
+                </motion.button>
               </div>
 
               {/* Sort Buttons */}
@@ -297,8 +373,8 @@ const Services = () => {
                   onClick={() => toggleSort('name')}
                   className={`flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 ${
                     sortBy === 'name' 
-                      ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25' 
-                      : 'bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'
+                      ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-lg shadow-amber-500/25' 
+                      : 'bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 border border-amber-200/50 dark:border-amber-700/30'
                   }`}
                 >
                   <Filter className="w-4 h-4" />
@@ -314,8 +390,8 @@ const Services = () => {
                   onClick={() => toggleSort('date')}
                   className={`flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 ${
                     sortBy === 'date' 
-                      ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25' 
-                      : 'bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'
+                      ? 'bg-gradient-to-r from-rose-500 to-maroon-700 text-white shadow-lg shadow-rose-500/25' 
+                      : 'bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 border border-rose-200/50 dark:border-rose-700/30'
                   }`}
                 >
                   <Clock className="w-4 h-4" />
@@ -335,89 +411,126 @@ const Services = () => {
             >
               Showing {displayedServices.length} of {filteredServices.length} services
               {searchTerm && ` for "${searchTerm}"`}
-              {sortBy === 'date' && ` • Sorted by ${sortOrder === 'desc' ? 'newest' : 'oldest'} first`}
             </motion.p>
           </motion.div>
         </motion.div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
-          {/* Services Grid */}
-          <div className="xl:col-span-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <AnimatePresence>
-                {displayedServices.map((service, index) => {
-                  const IconComponent = getIcon(service.icon);
-                  return (
-                    <ServiceCard
-                      key={service._id}
-                      service={service}
-                      IconComponent={IconComponent}
-                      index={index}
-                      isActive={activeService === index}
-                      isHovered={hoveredCard === index}
-                      onHover={() => setHoveredCard(index)}
-                      onLeave={() => setHoveredCard(null)}
-                      onClick={() => setActiveService(index)}
-                      getTimeAgo={getTimeAgo}
-                    />
-                  );
-                })}
-              </AnimatePresence>
-            </div>
+        {/* Services Content */}
+        <div className="max-w-7xl mx-auto">
+          {viewMode === 'grid' ? (
+            <ServicesGridView 
+              services={displayedServices}
+              selectedService={selectedService}
+              onServiceSelect={setSelectedService}
+              getIcon={getIcon}
+              getTimeAgo={getTimeAgo}
+            />
+          ) : (
+            <ServicesListView 
+              services={displayedServices}
+              selectedService={selectedService}
+              onServiceSelect={setSelectedService}
+              getIcon={getIcon}
+              getTimeAgo={getTimeAgo}
+            />
+          )}
 
-            {/* View More/Less Button */}
-            {filteredServices.length > 4 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex justify-center mt-8"
-              >
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowAll(!showAll)}
-                  className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  <span className="font-semibold">
-                    {showAll ? 'Show Less' : `View All ${filteredServices.length} Services`}
-                  </span>
-                  <motion.div
-                    animate={{ rotate: showAll ? 180 : 0 }}
-                    transition={{ duration: 0.3 }}
+          {/* View More/Less Buttons */}
+          {filteredServices.length > 8 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex justify-center mt-12"
+            >
+              {!showAll && displayedServices.length < filteredServices.length ? (
+                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                  <motion.button
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={toggleShowAll}
+                    className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-amber-400"
                   >
-                    <ArrowDown className="w-5 h-5" />
-                  </motion.div>
-                </motion.button>
-              </motion.div>
-            )}
-          </div>
+                    <Eye className="w-5 h-5" />
+                    <span className="font-semibold">
+                      View All {filteredServices.length} Services
+                    </span>
+                    <motion.div
+                      animate={{ y: [0, 5, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      <ArrowDown className="w-5 h-5" />
+                    </motion.div>
+                  </motion.button>
 
-          {/* Service Detail Sidebar */}
-          <div className="xl:col-span-1">
-            <AnimatePresence mode="wait">
-              <ServiceDetail 
-                key={activeService} 
-                service={filteredServices[activeService]} 
-                onImageClick={(image, index) => {
-                  setSelectedImage(image);
-                  setCurrentImageIndex(index);
-                }}
-                getIcon={getIcon}
-                getTimeAgo={getTimeAgo}
-              />
-            </AnimatePresence>
-          </div>
+                  {filteredServices.length > itemsToShow && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={loadMore}
+                      className="px-6 py-3 bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 rounded-xl border border-amber-200/50 dark:border-amber-700/30 hover:bg-white dark:hover:bg-gray-700 transition-all duration-300"
+                    >
+                      Load 8 More
+                    </motion.button>
+                  )}
+                </div>
+              ) : (
+                showAll && (
+                  <motion.button
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={toggleShowAll}
+                    className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-rose-500 to-maroon-700 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-rose-400"
+                  >
+                    <span className="font-semibold">
+                      Show Less
+                    </span>
+                    <motion.div
+                      animate={{ rotate: 180 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <ArrowDown className="w-5 h-5" />
+                    </motion.div>
+                  </motion.button>
+                )
+              )}
+            </motion.div>
+          )}
+
+          {/* No Results Message */}
+          {filteredServices.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-12"
+            >
+              <Search className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-gray-600 dark:text-gray-400 mb-2">
+                No services found
+              </h3>
+              <p className="text-gray-500 dark:text-gray-500">
+                Try adjusting your search terms or filters
+              </p>
+            </motion.div>
+          )}
         </div>
 
-        {/* Image Modal */}
+        {/* Service Detail Modal */}
         <AnimatePresence>
-          {selectedImage && filteredServices[activeService]?.images && (
-            <ImageModal 
-              images={filteredServices[activeService].images}
-              currentIndex={currentImageIndex}
-              onClose={() => setSelectedImage(null)}
-              onNext={nextImage}
-              onPrev={prevImage}
+          {selectedService && (
+            <ServiceDetailModal
+              service={selectedService}
+              currentImageIndex={currentImageIndex}
+              isPlaying={isPlaying}
+              onClose={() => {
+                setSelectedService(null);
+                setCurrentImageIndex(0);
+                setIsPlaying(false);
+              }}
+              onNextImage={nextImage}
+              onPrevImage={prevImage}
+              onTogglePlay={() => setIsPlaying(!isPlaying)}
+              getIcon={getIcon}
+              getTimeAgo={getTimeAgo}
             />
           )}
         </AnimatePresence>
@@ -426,416 +539,491 @@ const Services = () => {
   );
 };
 
-const ServiceCard = ({ service, IconComponent, index, isActive, isHovered, onHover, onLeave, onClick, getTimeAgo }) => {
-  const cardVariants = {
-    initial: { 
-      opacity: 0, 
-      y: 50,
-      scale: 0.9
-    },
-    animate: { 
-      opacity: 1, 
-      y: 0,
-      scale: 1,
-      transition: {
-        duration: 0.6,
-        delay: index * 0.1,
-        type: "spring",
-        stiffness: 100
-      }
-    },
-    hover: {
-      y: -5,
-      scale: 1.02,
-      transition: {
-        duration: 0.3,
-        ease: "easeOut"
-      }
-    },
-    active: {
-      y: -5,
-      scale: 1.03,
-      backgroundColor: "rgba(255, 255, 255, 0.15)",
-      borderColor: "rgba(59, 130, 246, 0.5)",
-      transition: {
-        duration: 0.3,
-        ease: "easeOut"
-      }
-    }
-  };
+const ServicesGridView = ({ services, selectedService, onServiceSelect, getIcon, getTimeAgo }) => {
+  return (
+    <motion.div 
+      layout
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+    >
+      <AnimatePresence>
+        {services.map((service, index) => (
+          <ServiceGridCard
+            key={service._id}
+            service={service}
+            index={index}
+            isSelected={selectedService?._id === service._id}
+            onSelect={onServiceSelect}
+            getIcon={getIcon}
+            getTimeAgo={getTimeAgo}
+          />
+        ))}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
 
-  const iconVariants = {
-    initial: { scale: 1 },
-    hover: { scale: 1.1, rotate: 5 },
-    active: { scale: 1.15, rotate: 0 }
-  };
+const ServicesListView = ({ services, selectedService, onServiceSelect, getIcon, getTimeAgo }) => {
+  return (
+    <motion.div layout className="space-y-4">
+      <AnimatePresence>
+        {services.map((service, index) => (
+          <ServiceListCard
+            key={service._id}
+            service={service}
+            index={index}
+            isSelected={selectedService?._id === service._id}
+            onSelect={onServiceSelect}
+            getIcon={getIcon}
+            getTimeAgo={getTimeAgo}
+          />
+        ))}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
+const ServiceGridCard = ({ service, index, isSelected, onSelect, getIcon, getTimeAgo }) => {
+  const IconComponent = getIcon(service.icon);
+  const hasImage = service.mainImage || (service.images && service.images.length > 0);
 
   return (
     <motion.div
-      variants={cardVariants}
-      initial="initial"
-      whileInView="animate"
-      whileHover="hover"
-      animate={isActive ? "active" : ""}
-      onHoverStart={onHover}
-      onHoverEnd={onLeave}
-      className="relative cursor-pointer group"
-      onClick={onClick}
+      initial={{ opacity: 0, scale: 0.8, y: 50 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.8, y: -50 }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      whileHover={{ scale: 1.02, y: -5 }}
+      className={`relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl overflow-hidden cursor-pointer border-2 transition-all duration-300 ${
+        isSelected 
+          ? 'border-amber-500 shadow-2xl shadow-amber-500/20' 
+          : 'border-amber-200/50 dark:border-amber-700/50 hover:border-amber-300/50 shadow-lg hover:shadow-xl'
+      }`}
+      onClick={() => onSelect(service)}
     >
-      {/* New Badge for recent services */}
-      {(service.createdAt || service.updatedAt) && 
-       new Date(service.createdAt || service.updatedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
-        <motion.div
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          className="absolute -top-2 -right-2 z-20"
-        >
+      {/* Image Section */}
+      {hasImage && (
+        <div className="relative h-48 overflow-hidden">
+          <img
+            src={service.mainImage || service.images[0].url}
+            alt={service.title}
+            className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           
-        </motion.div>
+          {/* Image Count Badge */}
+          {service.images && service.images.length > 1 && (
+            <div className="absolute top-3 right-3 bg-black/70 text-white px-2 py-1 rounded-full text-xs backdrop-blur-sm">
+              {service.images.length} photos
+            </div>
+          )}
+        </div>
       )}
 
-      {/* Gradient Glow Effect */}
-      <motion.div
-        animate={{
-          opacity: isHovered || isActive ? 0.3 : 0,
-          scale: isHovered || isActive ? 1.05 : 1,
-        }}
-        className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-3xl blur-lg transition-all duration-300"
-      />
-      
-      <div className={`relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 border-2 transition-all duration-300 h-full flex flex-col ${
-        isActive 
-          ? 'border-blue-500/50 shadow-2xl shadow-blue-500/20' 
-          : 'border-gray-200/50 dark:border-gray-700/50 group-hover:border-blue-300/50 shadow-lg hover:shadow-xl'
-      }`}>
-        <div className="flex items-start space-x-4 mb-4">
-          {/* Animated Icon */}
+      {/* Content Section */}
+      <div className="p-6">
+        <div className="flex items-center space-x-3 mb-3">
           <motion.div
-            variants={iconVariants}
-            animate={isActive ? "active" : isHovered ? "hover" : "initial"}
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0 ${
-              isActive 
-                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 shadow-blue-500/25' 
-                : 'bg-gradient-to-r from-gray-600 to-gray-700 dark:from-gray-500 dark:to-gray-600 group-hover:from-blue-500 group-hover:to-cyan-500'
-            }`}
+            whileHover={{ scale: 1.1, rotate: 360 }}
+            transition={{ duration: 0.6 }}
+            className="w-12 h-12 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0"
           >
             <IconComponent className="w-6 h-6 text-white" />
           </motion.div>
-
-          {/* Content */}
           <div className="flex-1 min-w-0">
-            <motion.h3 
-              className="text-xl font-bold text-gray-800 dark:text-white mb-2 line-clamp-2"
-              whileHover={{ color: isActive ? "" : "#3B82F6" }}
-            >
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white line-clamp-2 font-serif">
               {service.title}
-            </motion.h3>
-            <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-3 leading-relaxed mb-3">
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mt-1">
               {service.description}
             </p>
           </div>
         </div>
 
-        {/* Stats & Features */}
-        <div className="mt-auto">
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ 
-              opacity: isActive ? 1 : 0.7,
-              height: "auto"
-            }}
-            className="flex flex-col space-y-3"
-          >
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">
-                {service.stats}
-              </span>
-              {(service.createdAt || service.updatedAt) && (
-                <div className="flex items-center space-x-1 text-gray-400 dark:text-gray-500 text-xs">
-                  <Clock className="w-3 h-3" />
-                  <span>{getTimeAgo(service.createdAt || service.updatedAt)}</span>
-                </div>
+        {/* Features */}
+        <div className="flex flex-wrap gap-2 mb-3">
+          {service.features?.slice(0, 2).map((feature, i) => (
+            <motion.span
+              key={i}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: i * 0.1 }}
+              className="px-2 py-1 bg-amber-500/10 dark:bg-amber-500/20 rounded-full text-amber-600 dark:text-amber-400 text-xs font-medium"
+            >
+              {feature}
+            </motion.span>
+          ))}
+          {service.features && service.features.length > 2 && (
+            <span className="px-2 py-1 bg-gray-500/10 dark:bg-gray-500/20 rounded-full text-gray-600 dark:text-gray-400 text-xs">
+              +{service.features.length - 2} more
+            </span>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-3 border-t border-amber-200/50 dark:border-amber-700/50">
+          <span className="text-amber-600 dark:text-amber-400 font-bold text-sm">
+            {service.stats}
+          </span>
+          {(service.createdAt || service.updatedAt) && (
+            <div className="flex items-center space-x-1 text-gray-400 dark:text-gray-500 text-xs">
+              <Clock className="w-3 h-3" />
+              <span>{getTimeAgo(service.createdAt || service.updatedAt)}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Hover Effect */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileHover={{ opacity: 1 }}
+        className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-yellow-600/10 rounded-3xl pointer-events-none"
+      />
+
+      {/* New Badge */}
+      {(service.createdAt || service.updatedAt) && 
+        new Date(service.createdAt || service.updatedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
+        <motion.div
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          className="absolute top-3 left-3 px-2 py-1 bg-gradient-to-r from-rose-500 to-maroon-700 text-white text-xs font-bold rounded-full shadow-lg"
+        >
+          NEW
+        </motion.div>
+      )}
+    </motion.div>
+  );
+};
+
+const ServiceListCard = ({ service, index, isSelected, onSelect, getIcon, getTimeAgo }) => {
+  const IconComponent = getIcon(service.icon);
+  const hasImage = service.mainImage || (service.images && service.images.length > 0);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -50 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 50 }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      whileHover={{ x: 5 }}
+      className={`relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl cursor-pointer border-2 transition-all duration-300 ${
+        isSelected 
+          ? 'border-amber-500 shadow-lg shadow-amber-500/20' 
+          : 'border-amber-200/50 dark:border-amber-700/50 hover:border-amber-300/50'
+      }`}
+      onClick={() => onSelect(service)}
+    >
+      <div className="flex items-center p-4">
+        {/* Icon */}
+        <motion.div
+          whileHover={{ scale: 1.1 }}
+          className="w-14 h-14 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0 mr-4"
+        >
+          <IconComponent className="w-6 h-6 text-white" />
+        </motion.div>
+
+        {/* Image Thumbnail */}
+        {hasImage && (
+          <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 mr-4 border border-amber-200/50">
+            <img
+              src={service.mainImage || service.images[0].url}
+              alt={service.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white font-serif line-clamp-1">
+                {service.title}
+              </h3>
+              {/* New Badge for List View */}
+              {(service.createdAt || service.updatedAt) && 
+                new Date(service.createdAt || service.updatedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
+                <span className="px-2 py-1 bg-gradient-to-r from-rose-500 to-maroon-700 text-white text-xs font-bold rounded-full">
+                  NEW
+                </span>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
+            {(service.createdAt || service.updatedAt) && (
+              <div className="flex items-center space-x-1 text-gray-400 dark:text-gray-500 text-xs flex-shrink-0 ml-2">
+                <Clock className="w-3 h-3" />
+                <span>{getTimeAgo(service.createdAt || service.updatedAt)}</span>
+              </div>
+            )}
+          </div>
+          <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mb-2">
+            {service.description}
+          </p>
+          <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-1">
               {service.features?.slice(0, 3).map((feature, i) => (
-                <motion.span
+                <span
                   key={i}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="px-3 py-1 bg-blue-500/10 dark:bg-blue-500/20 rounded-full text-blue-600 dark:text-blue-400 text-xs font-medium"
+                  className="px-2 py-1 bg-amber-500/10 dark:bg-amber-500/20 rounded-full text-amber-600 dark:text-amber-400 text-xs"
                 >
                   {feature}
-                </motion.span>
+                </span>
               ))}
-              {service.images && service.images.length > 0 && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="px-3 py-1 bg-green-500/10 dark:bg-green-500/20 rounded-full text-green-600 dark:text-green-400 text-xs font-medium"
-                >
-                  {service.images.length} photos
-                </motion.span>
-              )}
             </div>
-          </motion.div>
+            <span className="text-amber-600 dark:text-amber-400 font-bold text-sm flex-shrink-0 ml-2">
+              {service.stats}
+            </span>
+          </div>
         </div>
+
+        {/* Arrow */}
+        <motion.div
+          initial={{ x: 0 }}
+          whileHover={{ x: 5 }}
+          className="ml-4 text-amber-500"
+        >
+          <ArrowRight className="w-5 h-5" />
+        </motion.div>
       </div>
     </motion.div>
   );
 };
 
-const ServiceDetail = ({ service, onImageClick, getIcon, getTimeAgo }) => {
-  if (!service) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl p-8 border border-gray-200/50 dark:border-gray-700/50 shadow-2xl text-center"
-      >
-        <HeartHandshake className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-        <h3 className="text-xl font-bold text-gray-600 dark:text-gray-400 mb-2">
-          Select a Service
-        </h3>
-        <p className="text-gray-500 dark:text-gray-500">
-          Choose a service from the list to view details
-        </p>
-      </motion.div>
-    );
-  }
-
+const ServiceDetailModal = ({ 
+  service, 
+  currentImageIndex, 
+  isPlaying, 
+  onClose, 
+  onNextImage, 
+  onPrevImage, 
+  onTogglePlay,
+  getIcon,
+  getTimeAgo 
+}) => {
   const IconComponent = getIcon(service.icon);
+  const hasImages = service.images && service.images.length > 0;
+  const currentImage = hasImages ? service.images[currentImageIndex] : null;
 
-  const containerVariants = {
-    initial: { 
-      opacity: 0, 
-      scale: 0.8,
-      rotateY: 180 
-    },
-    animate: { 
-      opacity: 1, 
-      scale: 1,
-      rotateY: 0,
-      transition: {
-        duration: 0.6,
-        type: "spring",
-        stiffness: 80
-      }
-    },
-    exit: { 
-      opacity: 0, 
-      scale: 0.8,
-      rotateY: -180,
-      transition: {
-        duration: 0.4
-      }
+  // Auto-play effect
+  React.useEffect(() => {
+    let interval;
+    if (isPlaying && hasImages && service.images.length > 1) {
+      interval = setInterval(() => {
+        onNextImage();
+      }, 3000);
     }
-  };
+    return () => clearInterval(interval);
+  }, [isPlaying, hasImages, service.images?.length, onNextImage]);
 
   return (
     <motion.div
-      variants={containerVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-2xl overflow-hidden sticky top-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl"
+      onClick={onClose}
     >
-      {/* Timestamp */}
-      {(service.createdAt || service.updatedAt) && (
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex items-center justify-end space-x-1 text-gray-500 dark:text-gray-400 text-sm mb-4"
-        >
-          <Clock className="w-4 h-4" />
-          <span>Added {getTimeAgo(service.createdAt || service.updatedAt)}</span>
-        </motion.div>
-      )}
-
-      {/* Main Image or Image Gallery */}
-      {service.images && service.images.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="relative h-48 rounded-2xl overflow-hidden mb-6 group cursor-pointer"
-          onClick={() => onImageClick(service.mainImage || service.images[0].url, 0)}
-        >
-          <motion.img
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.4 }}
-            src={service.mainImage || service.images[0].url}
-            alt={service.title}
-            className="w-full h-full object-cover"
-          />
-          
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
-          
-          {/* Multiple Images Indicator */}
-          {service.images.length > 1 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm"
-            >
-              {service.images.length} photos
-            </motion.div>
-          )}
-        </motion.div>
-      )}
-
-      {/* Content */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        initial={{ scale: 0.8, opacity: 0, rotateX: 45 }}
+        animate={{ scale: 1, opacity: 1, rotateX: 0 }}
+        exit={{ scale: 0.8, opacity: 0, rotateX: -45 }}
+        transition={{ type: "spring", stiffness: 100 }}
+        className="relative max-w-6xl w-full max-h-[90vh] overflow-hidden bg-white dark:bg-gray-800 rounded-3xl shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center space-x-3 mb-4">
-          <motion.div
-            whileHover={{ scale: 1.1, rotate: 360 }}
-            transition={{ duration: 0.6 }}
-            className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg"
-          >
-            <IconComponent className="w-6 h-6 text-white" />
-          </motion.div>
-          <motion.h3
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-2xl font-bold text-gray-800 dark:text-white"
-          >
-            {service.title}
-          </motion.h3>
-        </div>
-        
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="text-gray-600 dark:text-gray-300 text-base leading-relaxed mb-6"
+        {/* Close Button */}
+        <motion.button
+          whileHover={{ scale: 1.1, rotate: 90 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 p-2 bg-black/50 text-white rounded-full backdrop-blur-sm border border-amber-300/30"
         >
-          {service.description}
-        </motion.p>
+          <X className="w-6 h-6" />
+        </motion.button>
 
-        {/* Features */}
-        <div className="space-y-3 mb-6">
-          {service.features?.map((feature, index) => (
-            <motion.div
-              key={feature}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 + index * 0.1 }}
-              className="flex items-center space-x-3 text-gray-700 dark:text-gray-300"
-            >
+        <div className="flex flex-col lg:flex-row h-full">
+          {/* Image Section */}
+          <div className="lg:w-1/2 relative">
+            {hasImages ? (
+              <>
+                <div className="relative h-64 lg:h-full bg-gray-200 dark:bg-gray-700">
+                  <img
+                    src={currentImage.url}
+                    alt={currentImage.title || service.title}
+                    className="w-full h-full object-cover"
+                  />
+                  
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                  
+                  {/* Navigation Arrows */}
+                  {service.images.length > 1 && (
+                    <>
+                      <motion.button
+                        whileHover={{ scale: 1.1, x: -2 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={onPrevImage}
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 text-white rounded-full backdrop-blur-sm border border-amber-300/30"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.1, x: 2 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={onNextImage}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 text-white rounded-full backdrop-blur-sm border border-amber-300/30"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </motion.button>
+                    </>
+                  )}
+                  
+                  {/* Play/Pause Button */}
+                  {service.images.length > 1 && (
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={onTogglePlay}
+                      className="absolute bottom-4 left-4 p-3 bg-black/50 text-white rounded-full backdrop-blur-sm border border-amber-300/30"
+                    >
+                      {isPlaying ? (
+                        <Pause className="w-5 h-5" />
+                      ) : (
+                        <Play className="w-5 h-5" />
+                      )}
+                    </motion.button>
+                  )}
+                  
+                  {/* Image Counter */}
+                  {service.images.length > 1 && (
+                    <div className="absolute bottom-4 right-4 px-3 py-1 bg-black/50 text-white rounded-full backdrop-blur-sm text-sm border border-amber-300/30">
+                      {currentImageIndex + 1} / {service.images.length}
+                    </div>
+                  )}
+                </div>
+
+                {/* Thumbnail Strip */}
+                {service.images.length > 1 && (
+                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                    <div className="flex space-x-2 overflow-x-auto">
+                      {service.images.map((image, index) => (
+                        <motion.button
+                          key={index}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => {/* You would need to add state for this */}}
+                          className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 ${
+                            index === currentImageIndex 
+                              ? 'border-amber-500' 
+                              : 'border-transparent'
+                          }`}
+                        >
+                          <img
+                            src={image.url}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="h-64 lg:h-full bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center">
+                <IconComponent className="w-24 h-24 text-white opacity-80" />
+              </div>
+            )}
+          </div>
+
+          {/* Content Section */}
+          <div className="lg:w-1/2 p-6 lg:p-8 overflow-y-auto">
+            <div className="flex items-center space-x-3 mb-6">
               <motion.div
-                whileHover={{ scale: 1.2 }}
-                className="w-2 h-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex-shrink-0"
-              />
-              <span className="text-sm">{feature}</span>
-            </motion.div>
-          ))}
-        </div>
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2 }}
+                className="w-14 h-14 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-2xl flex items-center justify-center shadow-lg"
+              >
+                <IconComponent className="w-7 h-7 text-white" />
+              </motion.div>
+              <div>
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-2xl lg:text-3xl font-bold text-gray-800 dark:text-white font-serif"
+                >
+                  {service.title}
+                </motion.h2>
+                {(service.createdAt || service.updatedAt) && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-gray-500 dark:text-gray-400 text-sm flex items-center space-x-1 mt-1"
+                  >
+                    <Clock className="w-4 h-4" />
+                    <span>Added {getTimeAgo(service.createdAt || service.updatedAt)}</span>
+                  </motion.p>
+                )}
+              </div>
+            </div>
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 1 }}
-          className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800"
-        >
-          <span className="text-gray-600 dark:text-gray-400 font-medium">Impact Scale</span>
-          <span className="text-blue-600 dark:text-blue-400 font-bold text-lg">{service.stats}</span>
-        </motion.div>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed mb-6"
+            >
+              {service.description}
+            </motion.p>
+
+            {/* Features */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="mb-6"
+            >
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-3 font-serif">
+                Key Features
+              </h3>
+              <div className="space-y-2">
+                {service.features?.map((feature, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.7 + index * 0.1 }}
+                    className="flex items-center space-x-3 text-gray-700 dark:text-gray-300"
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.2 }}
+                      className="w-2 h-2 bg-gradient-to-r from-amber-500 to-yellow-600 rounded-full flex-shrink-0"
+                    />
+                    <span className="text-sm lg:text-base">{feature}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Stats */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1 }}
+              className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-800"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 dark:text-gray-400 font-medium">Impact Scale</span>
+                <span className="text-amber-600 dark:text-amber-400 font-bold text-lg">{service.stats}</span>
+              </div>
+            </motion.div>
+          </div>
+        </div>
       </motion.div>
     </motion.div>
   );
 };
-
-const ImageModal = ({ images, currentIndex, onClose, onNext, onPrev }) => (
-  <motion.div
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-xl p-4"
-    onClick={onClose}
-  >
-    <motion.div
-      initial={{ scale: 0.8, opacity: 0, rotateX: 45 }}
-      animate={{ scale: 1, opacity: 1, rotateX: 0 }}
-      exit={{ scale: 0.8, opacity: 0, rotateX: -45 }}
-      transition={{ type: "spring", stiffness: 100 }}
-      className="relative max-w-4xl max-h-[90vh] w-full"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {/* Close Button */}
-      <motion.button
-        whileHover={{ scale: 1.1, rotate: 90 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={onClose}
-        className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors z-10 bg-black/50 rounded-full p-2 backdrop-blur-sm"
-      >
-        <X className="w-6 h-6" />
-      </motion.button>
-
-      {/* Navigation Arrows */}
-      {images.length > 1 && (
-        <>
-          <motion.button
-            whileHover={{ scale: 1.1, x: -2 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={onPrev}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors z-10 bg-black/50 rounded-full p-3 backdrop-blur-sm"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1, x: 2 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={onNext}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors z-10 bg-black/50 rounded-full p-3 backdrop-blur-sm"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </motion.button>
-        </>
-      )}
-
-      <motion.img
-        key={currentIndex}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        transition={{ duration: 0.3 }}
-        src={images[currentIndex].url}
-        alt={`Image ${currentIndex + 1}`}
-        className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
-      />
-
-      {/* Image Counter */}
-      {images.length > 1 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full backdrop-blur-sm"
-        >
-          {currentIndex + 1} / {images.length}
-        </motion.div>
-      )}
-
-      {/* Image Title */}
-      {images[currentIndex].title && (
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className="absolute bottom-4 left-4 bg-black/70 text-white px-4 py-2 rounded-lg max-w-md backdrop-blur-sm"
-        >
-          <p className="text-sm font-medium">{images[currentIndex].title}</p>
-        </motion.div>
-      )}
-    </motion.div>
-  </motion.div>
-);
 
 export default Services;
