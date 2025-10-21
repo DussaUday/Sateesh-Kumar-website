@@ -295,7 +295,7 @@ const Services = () => {
             className="text-4xl md:text-5xl lg:text-6xl font-black font-serif text-gray-800 dark:text-white mb-4"
           >
             <span className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
-              Our Services
+              Service Is My Passion
             </span>
           </motion.h2>
           <motion.p
