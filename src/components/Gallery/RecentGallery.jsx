@@ -89,7 +89,7 @@ const RecentGallery = () => {
       setLoading(true);
       
       const [galleryRes, awardsRes, servicesRes, aboutRes] = await Promise.all([
-        axios.get('https://sateesh-kumar-portfolio.onrender.com/api/gallery?limit=50').catch(() => ({ data: [] })),
+        axios.get('https://sateesh-kumar-portfolio.onrender.com/api/gallery?limit=100').catch(() => ({ data: [] })),
         axios.get('https://sateesh-kumar-portfolio.onrender.com/api/awards').catch(() => ({ data: [] })),
         axios.get('https://sateesh-kumar-portfolio.onrender.com/api/services').catch(() => ({ data: [] })),
         axios.get('https://sateesh-kumar-portfolio.onrender.com/api/about/sections').catch(() => ({ data: [] }))

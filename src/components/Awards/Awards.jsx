@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { 
   Award, Star, Trophy, Medal, Crown, Zap, Sparkles, X, 
   ChevronLeft, ChevronRight, Image as ImageIcon, Search, 
-  ArrowRight, Filter, Clock, Grid, List, Eye
+  ArrowRight, Filter, Clock, Grid, List, Eye,
+  Calendar, Building, MapPin
 } from 'lucide-react'
 import axios from 'axios'
 
@@ -519,15 +520,17 @@ const AwardGridCard = ({ award, index, onViewImages }) => {
           
           {/* Image Count Badge */}
           {award.allImages.length > 1 && (
-            <div className="absolute top-3 right-3 bg-black/70 text-white px-2 py-1 rounded-full text-xs backdrop-blur-sm">
-              {award.allImages.length}
+            <div className="absolute top-3 right-3 bg-black/70 text-white px-2 py-1 rounded-full text-xs backdrop-blur-sm flex items-center space-x-1">
+              <ImageIcon className="w-3 h-3" />
+              <span>{award.allImages.length}</span>
             </div>
           )}
 
           {/* Year Badge */}
           <div className="absolute top-3 left-3">
-            <span className={`px-3 py-1 bg-gradient-to-r ${award.gradient} text-white text-sm font-semibold rounded-full shadow-lg`}>
-              {award.year}
+            <span className={`px-3 py-1 bg-gradient-to-r ${award.gradient} text-white text-sm font-semibold rounded-full shadow-lg flex items-center space-x-1`}>
+              <Calendar className="w-3 h-3" />
+              <span>{award.year}</span>
             </span>
           </div>
 
@@ -559,8 +562,9 @@ const AwardGridCard = ({ award, index, onViewImages }) => {
               {award.title}
             </h3>
             {award.organization && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
-                {award.organization}
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1 flex items-center space-x-1">
+                <Building className="w-3 h-3" />
+                <span>{award.organization}</span>
               </p>
             )}
           </div>
@@ -639,14 +643,16 @@ const AwardListCard = ({ award, index, onViewImages }) => {
                 </span>
               )}
             </div>
-            <span className={`px-3 py-1 bg-gradient-to-r ${award.gradient} text-white text-sm font-semibold rounded-full flex-shrink-0 ml-2`}>
-              {award.year}
+            <span className={`px-3 py-1 bg-gradient-to-r ${award.gradient} text-white text-sm font-semibold rounded-full flex-shrink-0 ml-2 flex items-center space-x-1`}>
+              <Calendar className="w-3 h-3" />
+              <span>{award.year}</span>
             </span>
           </div>
           
           {award.organization && (
-            <p className="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-1">
-              {award.organization}
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-1 flex items-center space-x-1">
+              <Building className="w-3 h-3" />
+              <span>{award.organization}</span>
             </p>
           )}
           
@@ -707,83 +713,131 @@ const ImageGalleryModal = ({ isOpen, onClose, award, selectedIndex, onNext, onPr
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
             transition={{ type: "spring", damping: 25 }}
-            className="relative bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+            className="relative bg-white dark:bg-gray-800 rounded-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden shadow-2xl flex flex-col md:flex-row"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/80 to-transparent p-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-bold text-white">{award.title}</h3>
-                  <p className="text-gray-300 text-sm">
-                    {selectedIndex + 1} of {allImages.length} images
-                  </p>
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 z-20 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors duration-200"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Image Section */}
+            <div className="relative flex-1 flex items-center justify-center bg-black p-4 md:p-8">
+              <div className="relative w-full h-full flex items-center justify-center">
+                <motion.img
+                  key={selectedIndex}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.1 }}
+                  transition={{ duration: 0.3 }}
+                  src={currentImage.url}
+                  alt={currentImage.title}
+                  className="max-h-full max-w-full object-contain"
+                />
+                
+                {/* Navigation Arrows */}
+                {allImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={onPrev}
+                      className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 p-2 md:p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors duration-200 z-10"
+                    >
+                      <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+                    </button>
+                    <button
+                      onClick={onNext}
+                      className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 p-2 md:p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors duration-200 z-10"
+                    >
+                      <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+                    </button>
+                  </>
+                )}
+
+                {/* Image Counter */}
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
+                  {selectedIndex + 1} / {allImages.length}
                 </div>
-                <button
-                  onClick={onClose}
-                  className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors duration-200"
-                >
-                  <X className="w-5 h-5" />
-                </button>
               </div>
             </div>
 
-            {/* Image Display */}
-            <div className="relative h-[60vh] flex items-center justify-center p-4">
-              <motion.img
-                key={selectedIndex}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.1 }}
-                transition={{ duration: 0.3 }}
-                src={currentImage.url}
-                alt={currentImage.title}
-                className="max-h-full max-w-full object-contain"
-              />
-              
-              {/* Navigation Arrows */}
+            {/* Information Panel */}
+            <div className="w-full md:w-96 flex flex-col bg-white dark:bg-gray-800 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-700">
+              {/* Header */}
+              <div className="p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className={`w-12 h-12 bg-gradient-to-r ${award.gradient} rounded-xl flex items-center justify-center shadow-lg`}>
+                    <award.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white line-clamp-2">
+                      {award.title}
+                    </h3>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
+                      {currentImage.title}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Award Details */}
+                <div className="space-y-2">
+                  {award.organization && (
+                    <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
+                      <Building className="w-4 h-4" />
+                      <span className="text-sm">{award.organization}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
+                    <Calendar className="w-4 h-4" />
+                    <span className="text-sm">{award.year}</span>
+                  </div>
+                  {award.location && (
+                    <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
+                      <MapPin className="w-4 h-4" />
+                      <span className="text-sm">{award.location}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="flex-1 p-4 md:p-6 overflow-y-auto">
+                <h4 className="font-semibold text-gray-800 dark:text-white mb-2">Description</h4>
+                <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                  {award.description}
+                </p>
+              </div>
+
+              {/* Thumbnail Strip */}
               {allImages.length > 1 && (
-                <>
-                  <button
-                    onClick={onPrev}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors duration-200"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={onNext}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors duration-200"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </>
+                <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                  <h4 className="font-semibold text-gray-800 dark:text-white mb-3 text-sm">
+                    All Images ({allImages.length})
+                  </h4>
+                  <div className="flex space-x-2 overflow-x-auto pb-2">
+                    {allImages.map((image, index) => (
+                      <button
+                        key={index}
+                        onClick={() => onSelectImage(index)}
+                        className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                          index === selectedIndex 
+                            ? 'border-amber-400 ring-2 ring-amber-400' 
+                            : 'border-transparent hover:border-amber-300'
+                        }`}
+                      >
+                        <img
+                          src={image.url}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
-
-            {/* Thumbnail Strip */}
-            {allImages.length > 1 && (
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                <div className="flex space-x-2 overflow-x-auto pb-2">
-                  {allImages.map((image, index) => (
-                    <button
-                      key={index}
-                      onClick={() => onSelectImage(index)}
-                      className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                        index === selectedIndex 
-                          ? 'border-amber-400 ring-2 ring-amber-400' 
-                          : 'border-transparent hover:border-white'
-                      }`}
-                    >
-                      <img
-                        src={image.url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </motion.div>
         </motion.div>
       )}
